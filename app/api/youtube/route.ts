@@ -1,10 +1,20 @@
 // app/api/youtube/route.ts
 /* eslint-disable no-console */
-import { NextRequest } from "next/server";
+
+import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/**
+ * Small JSON helper that accepts a numeric status, so TS is happy.
+ * Usage: return jsonWithReasons({ ok: true }, 200)
+ */
+function jsonWithReasons<T>(data: T, status = 200) {
+  return NextResponse.json(data as any, { status });
+}
 
 /**
  * ENV + API constants
@@ -16,13 +26,35 @@ const MAX_CHANNELS = Math.max(1, Number(process.env.YOUTUBE_MAX_CHANNELS || 8));
 /**
  * Types
  */
-type ChannelCfg = { label: string; handle?: string; channelId?: string; active?: boolean };
+type ChannelCfg = {
+  label: string;
+  handle?: string;     // e.g. "karafun"
+  channelId?: string;  // e.g. "UCxxx..."
+  active?: boolean;
+};
+
 type CachedVideo = {
   videoId: string;
   channelId: string;
   channelTitle?: string;
   title?: string;
   publishedAt?: string;
+};
+
+type YouTubeSearchItem = {
+  id?: { videoId?: string; kind?: string };
+  snippet?: {
+    channelId?: string;
+    channelTitle?: string;
+    title?: string;
+    publishedAt?: string;
+  };
+};
+
+type YouTubeSearchResponse = {
+  items?: YouTubeSearchItem[];
+  nextPageToken?: string;
+  pageInfo?: { totalResults?: number; resultsPerPage?: number };
 };
 
 /**
@@ -36,14 +68,17 @@ function norm(s: string) {
     .replace(/\s+/g, " ")
     .trim();
 }
+
 function tokens(s: string) {
   return norm(s).split(" ").filter(Boolean);
 }
+
 function ensureCacheDir() {
   const dir = path.resolve(".cache/youtube");
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
+
 function readJSON(file: string) {
   try {
     if (!fs.existsSync(file)) return null;
@@ -53,11 +88,18 @@ function readJSON(file: string) {
     return null;
   }
 }
+
+function writeJSON(file: string, data: any) {
+  try {
+    fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf8");
+  } catch {
+    // ignore cache write errors
+  }
+}
+
 function loadAllCachedVideos(): CachedVideo[] {
   const dir = ensureCacheDir();
-  const files = fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith(".json") && !f.startsWith("_"));
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".json") && !f.startsWith("_"));
   const all: CachedVideo[] = [];
   for (const f of files) {
     const data = readJSON(path.join(dir, f));
@@ -66,19 +108,20 @@ function loadAllCachedVideos(): CachedVideo[] {
   }
   return all;
 }
+
 function filterCachedByQuery(cached: CachedVideo[], artist: string, title: string) {
   const aT = tokens(artist);
   const tT = tokens(title);
   const queryTokens = [...aT, ...tT];
 
-  return cached.filter(v => {
+  return cached.filter((v) => {
     const T = norm(v.title || "");
 
     // CASE 1: if no query at all, include everything
     if (queryTokens.length === 0) return true;
 
     // CASE 2: at least one token must match
-    const hasMatch = queryTokens.some(t => T.includes(t));
+    const hasMatch = queryTokens.some((t) => T.includes(t));
 
     // CASE 3: also include if it contains the word "karaoke"
     const hasKaraoke = T.includes("karaoke");
@@ -90,7 +133,7 @@ function filterCachedByQuery(cached: CachedVideo[], artist: string, title: strin
 function toClientItem(v: CachedVideo) {
   return {
     label: v.channelTitle || "YouTube",
-    handle: v.channelId, // we may not know a @handle; channelId is stable
+    handle: v.channelId, // we may not know an @handle; channelId is stable
     title: v.title || "",
     videoId: v.videoId,
     url: `https://youtu.be/${v.videoId}`,
@@ -127,7 +170,10 @@ async function loadChannels(): Promise<ChannelCfg[]> {
       }))
       .filter((c) => c.label && c.active !== false);
   } catch (e) {
-    console.warn("youtube/route.ts: failed to import lib/youtubeChannels.ts:", (e as any)?.message || e);
+    console.warn(
+      "youtube/route.ts: failed to import lib/youtubeChannels.ts:",
+      (e as any)?.message || e
+    );
     return [];
   }
 }
@@ -144,182 +190,138 @@ async function fetchJSON<T>(url: string): Promise<T> {
   return (await r.json()) as T;
 }
 
-// Resolve @handle → UC... channelId
-async function resolveChannelIdFromHandle(handle: string): Promise<string | null> {
-  try {
-    const url = `${API}/channels?part=id&forHandle=${encodeURIComponent(handle)}&key=${API_KEY}`;
-    const json = await fetchJSON<any>(url);
-    return json?.items?.[0]?.id ?? null;
-  } catch {
-    return null;
-  }
+function buildSearchQuery(artist: string, title: string, q: string) {
+  const parts = [artist, title, q].map((s) => s.trim()).filter(Boolean);
+  // Favor artist + title when both provided
+  if (artist && title) return `${artist} ${title} karaoke`;
+  // Otherwise combine whatever we have and bias "karaoke"
+  const base = parts.join(" ");
+  return base ? `${base} karaoke` : "karaoke";
 }
 
-// search.list inside a channel (expensive vs uploads playlist, but fine for interactive queries)
-async function searchInChannel(
+async function searchChannelVideos(
   channelId: string,
-  query: string,
-  maxResults = 6
+  q: string,
+  maxResults = 10
 ): Promise<CachedVideo[]> {
-  const url = `${API}/search?part=snippet&channelId=${encodeURIComponent(
-    channelId
-  )}&q=${encodeURIComponent(
-    query
-  )}&type=video&maxResults=${maxResults}&videoEmbeddable=true&order=relevance&key=${API_KEY}`;
-  const json = await fetchJSON<any>(url);
-  const items = (json.items || []) as any[];
-  return items
-    .map((it) => ({
-      videoId: it?.id?.videoId,
-      channelId: it?.snippet?.channelId,
-      channelTitle: it?.snippet?.channelTitle,
-      title: it?.snippet?.title,
-      publishedAt: it?.snippet?.publishedAt,
-    }))
-    .filter((v) => !!v.videoId);
+  const url =
+    `${API}/search?part=snippet&type=video&order=relevance` +
+    `&channelId=${encodeURIComponent(channelId)}` +
+    `&maxResults=${maxResults}` +
+    `&q=${encodeURIComponent(q)}` +
+    `&key=${encodeURIComponent(API_KEY)}`;
+
+  const data = await fetchJSON<YouTubeSearchResponse>(url);
+  const items = (data.items || []).filter((it) => it.id?.videoId);
+  return items.map((it) => ({
+    videoId: String(it.id!.videoId!),
+    channelId: String(it.snippet?.channelId || ""),
+    channelTitle: it.snippet?.channelTitle || "YouTube",
+    title: it.snippet?.title || "",
+    publishedAt: it.snippet?.publishedAt,
+  }));
+}
+
+async function searchGeneralVideos(q: string, maxResults = 10): Promise<CachedVideo[]> {
+  const url =
+    `${API}/search?part=snippet&type=video&order=relevance` +
+    `&maxResults=${maxResults}` +
+    `&q=${encodeURIComponent(q)}` +
+    `&key=${encodeURIComponent(API_KEY)}`;
+
+  const data = await fetchJSON<YouTubeSearchResponse>(url);
+  const items = (data.items || []).filter((it) => it.id?.videoId);
+  return items.map((it) => ({
+    videoId: String(it.id!.videoId!),
+    channelId: String(it.snippet?.channelId || ""),
+    channelTitle: it.snippet?.channelTitle || "YouTube",
+    title: it.snippet?.title || "",
+    publishedAt: it.snippet?.publishedAt,
+  }));
 }
 
 /**
- * Route handler with debug “reasons”
+ * API handler
  */
 export async function GET(req: NextRequest) {
   const reasons: string[] = [];
-  const why = (msg: string) => reasons.push(msg);
-
-  if (!API_KEY) {
-    why("Missing YOUTUBE_API_KEY");
-    return jsonWithReasons({ items: [], cached: false, reasons }, { status: 500 });
-  }
+  const why = (s: string) => reasons.push(s);
 
   const { searchParams } = new URL(req.url);
-  // --- DEBUG HANDLING ---
-  // Show debug if ?debug=1 OR always when running in development mode
-  const AUTO_DEBUG = (process.env.NEXT_PUBLIC_APP_ENV || "").toLowerCase() === "development";
-  const debugParam = (searchParams.get("debug") || "").toLowerCase() === "1";
-  const wantDebug = AUTO_DEBUG || debugParam;
+  const artist = (searchParams.get("artist") || "").trim();
+  const title = (searchParams.get("title") || "").trim();
+  const qParam = (searchParams.get("q") || "").trim();
+  const dbOnly = searchParams.get("dbOnly") === "1";
 
-  // Helper to return JSON with debug reasons and header
-  function jsonWithReasons(body: any, status = 200) {
-    const payload = wantDebug ? body : { ...body, reasons: undefined };
-    const headers: HeadersInit = {};
-    if (wantDebug && Array.isArray(body?.reasons)) {
-      headers["X-Debug-Reasons"] = JSON.stringify(body.reasons.slice(0, 50));
-    }
-    return new Response(JSON.stringify(payload), {
-      status,
-      headers: { "content-type": "application/json; charset=utf-8", ...headers }
-    });
-  }
-
-  const debug = (searchParams.get("debug") || "").toLowerCase() === "1";
-
-  // Accept artist/title OR q=
-  let artist = searchParams.get("artist") || "";
-  let title = searchParams.get("title") || "";
-  const qParam = searchParams.get("q") || "";
-
-  if (!artist && !title && qParam) {
-    // Try to split "Artist - Title" patterns, else treat whole q as the title
-    const q = qParam.trim();
-    const parts = q.split(/\s+-\s+|–|—|:/);
-    if (parts.length >= 2) {
-      artist = parts[0].trim();
-      title = parts.slice(1).join(" ").trim();
-      why(`Parsed q= into artist="${artist}" title="${title}"`);
-    } else {
-      title = q;
-      why(`Using q= as title only: "${title}"`);
-    }
-  }
-
-  const query = [artist, title].filter(Boolean).join(" ").trim();
-  if (!query) {
-    why("Empty query (no artist/title/q provided)");
-    return jsonWithReasons({ items: [], cached: false, reasons: debug ? reasons : undefined });
-  }
-
-  // 1) Cache-first (quota-free)
+  // 1) Try cached results first (no API quota)
   const cached = loadAllCachedVideos();
-  if (cached.length > 0) {
-    const hits = filterCachedByQuery(cached, artist, title);
-    if (hits.length > 0) {
-      why(`Cache hit: ${hits.length} items matched`);
-      const items = hits.slice(0, 40).map(toClientItem);
-      return jsonWithReasons({ items, cached: true, reasons: debug ? reasons : undefined });
-    }
-    why("Cache miss (no cached titles matched tokens)");
-  } else {
-    why("Cache is empty (no .cache/youtube/*.json files)");
+  const qForFilterArtist = artist || "";
+  const qForFilterTitle = title || qParam || "";
+  const cachedHits = filterCachedByQuery(cached, qForFilterArtist, qForFilterTitle);
+
+  if (cachedHits.length > 0) {
+    why(`cache: ${cachedHits.length} items`);
+    const items = cachedHits.slice(0, 40).map(toClientItem);
+    return jsonWithReasons({ items, cached: true, reasons }, 200);
   }
 
-  // 2) Load configured channels (works with default/YT_CHANNELS/YTChannels/channels)
-  const allChannels = await loadChannels();
-  if (allChannels.length === 0) {
-    why("No channels configured in lib/youtubeChannels.ts");
-    return jsonWithReasons({ items: [], cached: false, reasons: debug ? reasons : undefined });
+  // 2) If dbOnly=true, return empty without calling the API
+  if (dbOnly) {
+    why("dbOnly=1, skipping API");
+    return jsonWithReasons({ items: [], cached: true, reasons }, 200);
   }
 
-  const channels = allChannels.slice(0, MAX_CHANNELS);
-  why(`Scanning up to ${channels.length} channel(s)`);
-
-  // Resolve any missing channelIds from handles
-  const withIds = await Promise.all(
-    channels.map(async (c) => {
-      let cid = c.channelId || null;
-      if (!cid && c.handle) cid = await resolveChannelIdFromHandle(c.handle);
-      if (!cid) why(`Could not resolve channelId for "${c.label}"`);
-      return { ...c, channelId: cid || c.channelId || null };
-    })
-  );
-
-  const valid = withIds.filter((c) => !!c.channelId) as Array<
-    typeof withIds[number] & { channelId: string }
-  >;
-  if (valid.length === 0) {
-    why("No valid channelIds after resolution");
-    return jsonWithReasons({ items: [], cached: false, reasons: debug ? reasons : undefined });
+  // 3) If no API key and no cache hits, error out
+  if (!API_KEY) {
+    why("Missing YOUTUBE_API_KEY");
+    return jsonWithReasons({ items: [], cached: false, reasons }, 500);
   }
 
-  // Live search across channels
-  const perChannel = 6; // raise/lower as needed
-  let live: CachedVideo[] = [];
+  // 4) Build search query
+  const q = buildSearchQuery(artist, title, qParam);
+  why(`query="${q}"`);
 
-  await Promise.all(
-    valid.map(async (c) => {
+  // 5) Load channels list (optional targeting)
+  const channels = (await loadChannels()).slice(0, MAX_CHANNELS);
+  const out: CachedVideo[] = [];
+
+  if (channels.length > 0) {
+    // Search each configured channel by channelId if provided
+    for (const ch of channels) {
+      const cid = ch.channelId;
+      if (!cid) continue;
       try {
-        const found = await searchInChannel(c.channelId, query, perChannel);
-        if (found.length === 0) why(`No live results in ${c.label}`);
-        live.push(...found.map((v) => ({ ...v, channelTitle: v.channelTitle || c.label })));
-
-        // OPTIONAL: append to per-channel cache (merge by videoId)
-        if (found.length > 0) {
-          const file = path.join(ensureCacheDir(), `${c.channelId}.json`);
-          const existing: CachedVideo[] = readJSON(file) ?? [];
-          const byId = new Map<string, CachedVideo>();
-          for (const v of existing) byId.set(v.videoId, v);
-          for (const v of found) byId.set(v.videoId, v);
-          const merged = Array.from(byId.values());
-          fs.writeFileSync(file, JSON.stringify(merged, null, 2), "utf8");
-        }
+        const vids = await searchChannelVideos(cid, q, 10);
+        out.push(...vids);
+        // cache per-channel results
+        const dir = ensureCacheDir();
+        const file = path.join(dir, `${cid}.json`);
+        writeJSON(file, vids);
       } catch (e: any) {
-        why(`API error for ${c.label}: ${e?.message || String(e)}`);
+        why(`channel ${cid} failed: ${e?.message || e}`);
       }
-    })
-  );
-
-  if (live.length > 0) {
-    // Deduplicate by videoId and cap
-    const seen = new Set<string>();
-    const deduped = live.filter((v) => {
-      if (seen.has(v.videoId)) return false;
-      seen.add(v.videoId);
-      return true;
-    });
-    const items = deduped.slice(0, 40).map(toClientItem);
-    return jsonWithReasons({ items, cached: false, reasons: debug ? reasons : undefined });
+    }
   }
 
-  why("No results after live search");
-  return jsonWithReasons({ items: [], cached: false, reasons: debug ? reasons : undefined });
+  // 6) If no channel-specific results, do a general search
+  if (out.length === 0) {
+    try {
+      const vids = await searchGeneralVideos(q, 12);
+      out.push(...vids);
+      // cache a generic bucket
+      const dir = ensureCacheDir();
+      const file = path.join(dir, `_general.json`);
+      writeJSON(file, vids);
+    } catch (e: any) {
+      why(`general search failed: ${e?.message || e}`);
+    }
+  }
+
+  const items = out.map(toClientItem);
+  return jsonWithReasons({ items, cached: false, reasons }, 200);
 }
 
+export async function POST(req: NextRequest) {
+  // Mirror GET to simplify client usage
+  return GET(req);
+}

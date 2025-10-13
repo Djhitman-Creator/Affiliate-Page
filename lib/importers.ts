@@ -1,6 +1,6 @@
 // lib/importers.ts
 import Papa from "papaparse";
-import { prisma } from "./prisma";
+import prisma from "@/lib/prisma";
 
 export type Affiliate = "Karaoke Version" | "Party Tyme";
 
@@ -106,7 +106,6 @@ function toText(v: any): string | null {
 type UpsertOutcome = "added" | "updated" | "skipped";
 
 // Replace your entire upsertTrack with this version:
-type UpsertOutcome = "added" | "updated" | "skipped";
 
 export async function upsertTrack(input: {
   source: string;                 // "Party Tyme" | "Karaoke Version"
