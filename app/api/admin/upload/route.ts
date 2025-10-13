@@ -1,7 +1,10 @@
-import { NextRequest } from 'next/server'
-import { importCsv } from '@/lib/importers'
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-export const runtime = 'nodejs'
+import { NextRequest } from "next/server";
+import { importCsv } from "@/lib/importers";
+
 
 export async function POST(req: NextRequest) {
   const form = await req.formData()

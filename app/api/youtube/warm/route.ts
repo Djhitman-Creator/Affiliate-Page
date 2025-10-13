@@ -1,10 +1,12 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 /* eslint-disable no-console */
 import { NextRequest } from "next/server";
 import fs from "fs";
 import path from "path";
 import { YT_CHANNELS } from "@/lib/youtubeChannels";
 
-export const runtime = "nodejs";
 const API = "https://www.googleapis.com/youtube/v3";
 const KEY = process.env.YOUTUBE_API_KEY || "";
 const MAX_PER_CHANNEL = Math.max(50, Number(process.env.YT_INDEX_MAX || 300));
