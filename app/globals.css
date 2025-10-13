@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* ===== Theme-aware base tweaks ===== */
+:root { color-scheme: light dark; }
+html { scroll-behavior: smooth; }
+/* Smoother theme flips (optional) */
+* { transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease; }
+
+body { @apply bg-white text-neutral-900; }
+.dark body { @apply bg-neutral-950 text-neutral-100; }
+
+/* Text selection (nicer in both themes) */
+::selection { @apply bg-emerald-500/30; }
+
+/* ===== Reusable UI primitives (Tailwind components layer) ===== */
+@layer components {
+  /* Card wrapper used around tables/sections */
+  .card {
+    @apply rounded-2xl border border-black/10 bg-white p-4 shadow-sm
+           dark:border-white/10 dark:bg-neutral-900;
+  }
+
+  /* Buttons (primary, neutral, and subtle) */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold
+           border border-black/10 bg-white text-neutral-900 shadow-sm
+           hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-emerald-400
+           focus:ring-offset-2 focus:ring-offset-black/10
+           dark:border-white/10 dark:bg-neutral-900 dark:text-white
+           dark:hover:bg-white/10 dark:focus:ring-offset-white/10;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold
+           bg-emerald-600 text-white shadow-sm
+           hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400
+           focus:ring-offset-2 focus:ring-offset-black/10
+           dark:bg-emerald-700 dark:hover:bg-emerald-600 dark:focus:ring-offset-white/10;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold
+           bg-red-600 text-white shadow-sm
+           hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400
+           focus:ring-offset-2 focus:ring-offset-black/10
+           dark:bg-red-700 dark:hover:bg-red-600 dark:focus:ring-offset-white/10;
+  }
+  .btn:disabled,
+  .btn-primary:disabled,
+  .btn-danger:disabled {
+    @apply opacity-50 pointer-events-none;
+  }
+
+  /* Text inputs */
+  .input {
+    @apply w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400
+           shadow-sm outline-none
+           focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-black/10
+           dark:border-white/10 dark:bg-neutral-900 dark:text-white dark:placeholder:text-white/40
+           dark:focus:ring-offset-white/10;
+  }
+
+  /* Table styling */
+  .table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+  .table thead th {
+    @apply sticky top-0 z-10 bg-white/80 px-3 py-2 font-semibold text-neutral-700 backdrop-blur
+           dark:bg-neutral-900/80 dark:text-white/80;
+  }
+  .table tbody td {
+    @apply px-3 py-2 align-middle;
+  }
+  .table tbody tr {
+    @apply border-b border-black/10 odd:bg-black/0
+           dark:border-white/10 dark:odd:bg-white/5;
+  }
+
+  /* Glass panel utility (uses your custom glass color + shadow) */
+  .glass {
+    @apply rounded-2xl bg-[rgba(255,255,255,0.08)] shadow-[0_8px_30px_rgba(0,0,0,0.2)] backdrop-blur-[2px];
+  }
+
+    /* Stronger text defaults for light mode */
+  .text-base-light {
+    @apply text-neutral-900 dark:text-white;
+  }
+
+  /* Force tables and card content to true black in light mode */
+  .table th,
+  .table td,
+  .card {
+    @apply text-neutral-900 dark:text-neutral-100;
+  }
+
+  /* Force headings and section labels to pure black in light mode */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-black dark:text-white;
+  }
+
+  /* Force paragraph and small text inside white cards to readable black */
+  p, .text-sm, .text-xs {
+    @apply text-black dark:text-neutral-200;
+  }
+
+}
+
+/* Optional: nicer scrollbars (Chromium/Edge/Firefox) */
+@supports selector(::-webkit-scrollbar) {
+  *::-webkit-scrollbar        { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-thumb  { @apply rounded-lg bg-neutral-300 dark:bg-neutral-700; }
+  *::-webkit-scrollbar-track  { @apply bg-transparent; }
+}
+
+:root { color-scheme: light dark; }
+html { scroll-behavior: smooth; }
+
+/* Optional: smoother theme flips */
+* { transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease; }
+
+body { @apply bg-white text-neutral-900; }
+.dark body { @apply bg-neutral-950 text-neutral-100; }
+
+:root {
+  --bg: radial-gradient(1200px 800px at 10% -10%, #3a7bd5 0%, rgba(0,0,0,0) 40%),
+        radial-gradient(900px 700px at 120% 10%, #00d2ff 0%, rgba(0,0,0,0) 35%),
+        linear-gradient(135deg, #0f1220 0%, #0a0c16 100%);
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: #e5e7eb;
+}
+
+.glass {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+
+.btn {
+  @apply px-4 py-2 rounded-2xl border border-white/10 hover:border-white/30 transition;
+  background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
+}
+
+.input {
+  @apply w-full px-4 py-2 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-white/30;
+}
+
+.table {
+  @apply w-full text-sm;
+}
+
+th, td {
+  @apply px-3 py-2;
+}
+
+th {
+  @apply sticky top-0 bg-white/5 backdrop-blur border-b border-white/10;
+}
+
+.card {
+  @apply glass rounded-3xl p-5;
+}

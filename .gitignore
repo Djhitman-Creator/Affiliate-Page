@@ -1,0 +1,21 @@
+# Node/Next
+node_modules
+.next
+out
+*.log
+
+# Env / DB / Cache
+.env*
+*.db
+*.db-journal
+.cache/
+.cache/youtube/
+
+# Prisma (local db files)
+prisma/*.db
+prisma/*.db-journal
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.vscode/
