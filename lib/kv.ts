@@ -1,6 +1,6 @@
 // lib/kv.ts
 
-import { prisma } from "./prisma";
+import prisma from "@/lib/db";
 
 const KV_BASE = (process.env.KV_API_BASE || "https://www.karaoke-version.com/api").replace(/\/+$/, "");
 const KV_AFFILIATE_ID = Number(process.env.KV_AFFILIATE_ID || 0);
