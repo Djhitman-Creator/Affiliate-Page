@@ -34,6 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     PARTYTYME_CSV_URL: process.env.PARTYTYME_CSV_URL ? "set" : "missing",
     YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY ? "set" : "missing",
     NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV ?? null,
+    KV_DISABLED: process.env.KV_DISABLED ?? null,
   };
 
   const checks: Record<string, any> = {};
