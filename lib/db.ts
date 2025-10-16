@@ -1,17 +1,23 @@
 // lib/db.ts
 export const runtime = "nodejs";
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/db";
 
-// Hard safety: force a valid SQLite URL on Vercel if misconfigured
-if (process.env.VERCEL && (!process.env.DATABASE_URL || !process.env.DATABASE_URL.startsWith("file:"))) {
+/**
+ * On Vercel lambdas, Prisma + SQLite requires a writable file: URL.
+ * If the env is misconfigured (e.g., "./prisma/dev.db"), coerce it at runtime.
+ */
+if (
+  process.env.VERCEL &&
+  (!process.env.DATABASE_URL || !process.env.DATABASE_URL.startsWith("file:"))
+) {
   process.env.DATABASE_URL = "file:/tmp/dev.db";
 }
 
-const globalAny = globalThis as any;
-const prisma = globalAny.__prisma ?? new PrismaClient();
+const g = globalThis as any;
+const prisma = g.__prisma ?? /* centralized in @/lib/db */ prisma;
 
 if (process.env.NODE_ENV !== "production") {
-  globalAny.__prisma = prisma;
+  g.__prisma = prisma;
 }
 
 export default prisma;

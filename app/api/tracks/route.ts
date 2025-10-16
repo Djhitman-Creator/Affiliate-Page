@@ -2,19 +2,18 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-// Use the guarded Prisma client (ensures DATABASE_URL is valid on Vercel)
-import prisma from "../../../lib/db"; // <- relative path from this file
+import prisma from "@/lib/db";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const base = `${url.protocol}//${url.host}`; // absolute base for server-side fetches
+  const base = `${url.protocol}//${url.host}`; // absolute base for SSR fetches
   const q = (url.searchParams.get("q") || "").trim();
   if (!q) return NextResponse.json({ items: [], total: 0 });
 
   const results: any[] = [];
   const errors: Record<string, string> = {};
 
-  // --- Party Tyme via Prisma (SQLite-safe: no mode:"insensitive")
+  // Party Tyme via Prisma (SQLite-safe: no mode:"insensitive")
   try {
     if ((process.env.DATABASE_URL || "").startsWith("file:")) {
       const pt = await prisma.track.findMany({
@@ -35,7 +34,7 @@ export async function GET(req: Request) {
     errors.partytyme = e?.message || String(e);
   }
 
-  // --- Karaoke Version (KV)
+  // Karaoke Version
   try {
     const kvUrl = `${process.env.KV_SEARCH_ENDPOINT}?q=${encodeURIComponent(q)}&aff=${process.env.KV_AFFILIATE_ID}`;
     const kvRes = await fetch(kvUrl, { cache: "no-store" });
@@ -56,7 +55,7 @@ export async function GET(req: Request) {
     errors.kv = e?.message || String(e);
   }
 
-  // --- YouTube (absolute URL; don’t rely on NEXT_PUBLIC_APP_URL on the server)
+  // YouTube (absolute URL; don’t rely on NEXT_PUBLIC_APP_URL on the server)
   try {
     const ytRes = await fetch(`${base}/api/youtube?q=${encodeURIComponent(q)}`, { cache: "no-store" });
     const ytData = await ytRes.json();
@@ -78,4 +77,3 @@ export async function GET(req: Request) {
 
   return NextResponse.json({ items: results, total: results.length, errors });
 }
-

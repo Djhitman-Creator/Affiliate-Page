@@ -1,15 +1,29 @@
 // pages/api/diag.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 
+function coerceDbUrlForVercel() {
+  const raw = process.env.DATABASE_URL || "";
+  let effective = raw;
+  if (process.env.VERCEL && (!raw || !raw.startsWith("file:"))) {
+    effective = "file:/tmp/dev.db";
+  }
+  return { raw, effective };
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const dbUrl = process.env.DATABASE_URL || "";
+  const proto = (req.headers["x-forwarded-proto"] as string) || "https";
+  const host = (req.headers.host as string) || "localhost:3000";
+  const base = `${proto}://${host}`;
+
+  const { raw, effective } = coerceDbUrlForVercel();
   const dbCheck = {
-    present: !!dbUrl,
-    startsWithFile: dbUrl.startsWith("file:"),
-    sample: dbUrl.slice(0, 16) // e.g. "file:/tmp/dev.db"
+    present: !!raw,
+    rawStartsWithFile: raw.startsWith("file:"),
+    rawSample: raw.slice(0, 24),
+    effectiveStartsWithFile: effective.startsWith("file:"),
+    effectiveSample: effective.slice(0, 24),
   };
 
-  // Minimal, safe env echo (do not print secrets)
   const env = {
     DB_PROVIDER: process.env.DB_PROVIDER ?? null,
     KV_API_BASE: process.env.KV_API_BASE ? "set" : "missing",
@@ -22,10 +36,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV ?? null,
   };
 
-  // Lightweight live checks (won’t crash if offline)
   const checks: Record<string, any> = {};
   try {
-    const yt = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ""}/api/youtube?q=george%20strait`).then(r => r.json());
+    const yt = await fetch(`${base}/api/youtube?q=george%20strait`).then(r => r.json());
     checks.youtube = { ok: Array.isArray(yt?.items), count: Array.isArray(yt?.items) ? yt.items.length : 0 };
   } catch (e: any) {
     checks.youtube = { ok: false, error: e?.message || String(e) };
@@ -39,13 +52,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     checks.kv = { ok: false, error: e?.message || String(e) };
   }
 
-  // Don’t import Prisma here; keep diag cheap. DB validity is shown by dbCheck.
-
-  res.status(200).json({
-    ok: true,
-    whoami: "pages-api-diag",
-    env,
-    dbCheck,
-    checks
-  });
+  res.status(200).json({ ok: true, whoami: "pages-api-diag", env, dbCheck, checks });
 }
+
