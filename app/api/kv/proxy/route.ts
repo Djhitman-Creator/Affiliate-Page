@@ -9,92 +9,50 @@ export async function GET(req: Request) {
 
   const base = (process.env.KV_SEARCH_ENDPOINT || "").replace(/\/+$/, "");
   const aff  = (process.env.KV_AFFILIATE_ID || "").trim();
+
+  // Canonical guess KV accepts: query is a JSON object, and we pass the affiliate id.
+  // We also include Referer/Origin = your production host.
   const protoHost = getBase(req);
-  const tried: Array<{ kvUrl: string; status: number; ok: boolean; body: any; variant: string }> = [];
+  const qs = new URLSearchParams({
+    query: JSON.stringify({ q }),               // <-- single shape
+    ...(aff ? { aff } : {})
+  });
 
-  // KV says "query" must be a JSON object. We'll try a few shapes.
-  const payloads = [
-    { q },
-    { query: q },
-    { keyword: q },
-    { text: q },
-    { artist: q },
-  ];
+  const kvUrl = `${base}?${qs.toString()}`;
 
-  // Try common affiliate param names
-  const affParams = [
-    (v: string) => `aff=${encodeURIComponent(v)}`,
-    (v: string) => `affiliate=${encodeURIComponent(v)}`,
-    (v: string) => `affiliate_id=${encodeURIComponent(v)}`,
-    (v: string) => `partner=${encodeURIComponent(v)}`,
-    (v: string) => `aid=${encodeURIComponent(v)}`,
-  ];
+  // one shot + one gentle retry if 429/5xx
+  const headers = {
+    "User-Agent": "AffiliateKVProxy/1.0",
+    Referer: protoHost,
+    Origin: protoHost,
+    ...(aff ? { "X-Affiliate-Id": aff } : {})
+  };
 
-  // We also try header-based identification if KV supports it
-  const headerVariants = [
-    { name: "none", headers: {} as Record<string, string> },
-    { name: "with-referer", headers: { Referer: protoHost } },
-    { name: "with-origin", headers: { Origin: protoHost } },
-    { name: "with-both", headers: { Referer: protoHost, Origin: protoHost } },
-    { name: "with-x-affiliate", headers: aff ? { "X-Affiliate-Id": aff } : {} },
-    { name: "with-all", headers: ((): Record<string,string> => {
-        const h: Record<string,string> = { Referer: protoHost, Origin: protoHost };
-        if (aff) h["X-Affiliate-Id"] = aff;
-        return h;
-      })()
-    },
-  ];
+  const first = await fetch(kvUrl, { cache: "no-store", headers });
+  let txt = await first.text();
+  let body: any = tryParseJson(txt);
 
-  for (const payload of payloads) {
-    const queryParam = `query=${encodeURIComponent(JSON.stringify(payload))}`;
-    const affPieces = aff ? affParams.map(fn => fn(aff)) : [""]; // if no aff, try without
-    for (const ap of affPieces) {
-      const qs = ap ? `${queryParam}&${ap}` : queryParam;
-      const kvUrl = `${base}?${qs}`;
-
-      for (const hv of headerVariants) {
-        try {
-          const r   = await fetch(kvUrl, {
-            cache: "no-store",
-            headers: {
-              "User-Agent": "AffiliateKVProxy/1.0",
-              ...hv.headers,
-            }
-          });
-          const txt = await r.text();
-          const body = tryParseJson(txt);
-
-          if (r.ok && Array.isArray((body as any)?.items)) {
-            return NextResponse.json({ ok: true, status: r.status, kvUrl, variant: hv.name, body });
-          }
-          tried.push({ kvUrl, status: r.status, ok: r.ok, body, variant: hv.name });
-        } catch (e: any) {
-          tried.push({ kvUrl, status: 0, ok: false, body: e?.message || String(e), variant: hv.name });
-        }
-      }
-    }
+  if (first.ok && Array.isArray(body?.items)) {
+    return NextResponse.json({ ok: true, status: first.status, kvUrl, body });
   }
 
-  // If we still fail with 403 "Affiliate not identified", it likely means your KV
-  // affiliate must be tied to an approved domain. Ask KV to whitelist your production domain.
-  return NextResponse.json({
-    ok: false,
-    status: 502,
-    hint: "If all variants show 403 Affiliate not identified, your KV affiliate likely requires a whitelisted domain (Referer/Origin). Ask KV to whitelist your production hostname.",
-    hostWeSent: protoHost,
-    tried
-  }, { status: 502 });
+  if (first.status === 429 || first.status >= 500) {
+    await sleep(600); // 0.6s backoff
+    const second = await fetch(kvUrl, { cache: "no-store", headers });
+    txt = await second.text();
+    body = tryParseJson(txt);
+    if (second.ok && Array.isArray(body?.items)) {
+      return NextResponse.json({ ok: true, status: second.status, kvUrl, retried: true, body });
+    }
+    return NextResponse.json({ ok: false, status: second.status, kvUrl, body, retried: true }, { status: 502 });
+  }
+
+  return NextResponse.json({ ok: false, status: first.status, kvUrl, body }, { status: first.status || 502 });
 }
 
-function tryParseJson(s: string) {
-  try { return JSON.parse(s); } catch { return s; }
-}
-
+function tryParseJson(s: string) { try { return JSON.parse(s); } catch { return s; } }
+function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 function getBase(req: Request) {
-  // Build https://host.example from the incoming request
-  const url = new URL(req.url);
-  const proto = (url.protocol || "https:").replace(":", "");
-  const host = url.host;
-  return `${proto}://${host}`;
+  const u = new URL(req.url);
+  return `${u.protocol}//${u.host}`;
 }
-
