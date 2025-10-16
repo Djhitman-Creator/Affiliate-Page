@@ -34,48 +34,80 @@ export async function GET(req: Request) {
     errors.partytyme = e?.message || String(e);
   }
 
-  // --- Karaoke Version (KV) with JSON-encoded `query`
+  // --- Karaoke Version (KV) robust call
 try {
   const base = (process.env.KV_SEARCH_ENDPOINT || "").replace(/\/+$/, "");
   const aff  = (process.env.KV_AFFILIATE_ID || "").trim();
+
   const payloads = [{ q }, { query: q }, { keyword: q }, { text: q }];
+  const affParams = [
+    (v: string) => `aff=${encodeURIComponent(v)}`,
+    (v: string) => `affiliate=${encodeURIComponent(v)}`,
+    (v: string) => `affiliate_id=${encodeURIComponent(v)}`,
+    (v: string) => `partner=${encodeURIComponent(v)}`,
+    (v: string) => `aid=${encodeURIComponent(v)}`,
+  ];
+
+  const protoHost = `${new URL(req.url).protocol}//${new URL(req.url).host}`;
+  const headerVariants = [
+    { name: "none", headers: {} as Record<string, string> },
+    { name: "with-referer", headers: { Referer: protoHost } },
+    { name: "with-origin", headers: { Origin: protoHost } },
+    { name: "with-both", headers: { Referer: protoHost, Origin: protoHost } },
+    { name: "with-x-affiliate", headers: aff ? { "X-Affiliate-Id": aff } : {} },
+    { name: "with-all", headers: ((): Record<string,string> => {
+        const h: Record<string,string> = { Referer: protoHost, Origin: protoHost };
+        if (aff) h["X-Affiliate-Id"] = aff;
+        return h;
+      })()
+    },
+  ];
 
   let added = 0;
-  let lastError: any = null;
+  let lastDiag: any = null;
 
   for (const payload of payloads) {
-    const qs   = `query=${encodeURIComponent(JSON.stringify(payload))}${aff ? `&aff=${aff}` : ""}`;
-    const kvUrl = `${base}?${qs}`;
+    const qp = `query=${encodeURIComponent(JSON.stringify(payload))}`;
+    const apList = aff ? affParams.map(fn => fn(aff)) : [""];
+    for (const ap of apList) {
+      const qs = ap ? `${qp}&${ap}` : qp;
+      const kvUrl = `${base}?${qs}`;
 
-    try {
-      const kvRes = await fetch(kvUrl, { cache: "no-store" });
-      const raw   = await kvRes.text();
-      let data: any = raw; try { data = JSON.parse(raw); } catch {}
+      for (const hv of headerVariants) {
+        try {
+          const r = await fetch(kvUrl, { cache: "no-store", headers: { "User-Agent": "AffiliateKVProxy/1.0", ...hv.headers } });
+          const raw = await r.text();
+          let data: any = raw; try { data = JSON.parse(raw); } catch {}
 
-      if (kvRes.ok && Array.isArray(data?.items)) {
-        results.push(...data.items.map((it: any) => ({
-          source: "Karaoke Version",
-          artist: it.artist,
-          title:  it.title,
-          url:    it.url,
-          imageUrl: it.imageUrl,
-        })));
-        added = added + (data.items?.length || 0);
-        break; // success
-      } else {
-        lastError = { status: kvRes.status, kvUrl, body: typeof data === "string" ? data.slice(0, 200) : data };
+          if (r.ok && Array.isArray(data?.items)) {
+            results.push(...data.items.map((it: any) => ({
+              source: "Karaoke Version",
+              artist: it.artist,
+              title:  it.title,
+              url:    it.url,
+              imageUrl: it.imageUrl,
+            })));
+            added += (data.items?.length || 0);
+            break;
+          } else {
+            lastDiag = { status: r.status, kvUrl, variant: hv.name, body: typeof data === "string" ? data.slice(0, 200) : data };
+          }
+        } catch (e: any) {
+          lastDiag = { kvUrl, variant: hv.name, error: e?.message || String(e) };
+        }
       }
-    } catch (e: any) {
-      lastError = { kvUrl, error: e?.message || String(e) };
+      if (added) break;
     }
+    if (added) break;
   }
 
-  if (!added && lastError) {
-    errors.kv = lastError;
+  if (!added && lastDiag) {
+    errors.kv = lastDiag;
   }
 } catch (e: any) {
   errors.kv = e?.message || String(e);
 }
+
 
 
   // YouTube (absolute URL; don’t rely on NEXT_PUBLIC_APP_URL on the server)
