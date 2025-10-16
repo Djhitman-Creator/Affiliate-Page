@@ -2,39 +2,40 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+// Use the guarded Prisma client (ensures DATABASE_URL is valid on Vercel)
+import prisma from "../../../lib/db"; // <- relative path from this file
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
+  const base = `${url.protocol}//${url.host}`; // absolute base for server-side fetches
   const q = (url.searchParams.get("q") || "").trim();
   if (!q) return NextResponse.json({ items: [], total: 0 });
 
   const results: any[] = [];
   const errors: Record<string, string> = {};
 
-  // Party Tyme via Prisma (safe)
+  // --- Party Tyme via Prisma (SQLite-safe: no mode:"insensitive")
   try {
     if ((process.env.DATABASE_URL || "").startsWith("file:")) {
       const pt = await prisma.track.findMany({
         where: {
           OR: [
-            { artist: { contains: q, mode: "insensitive" } },
-            { title: { contains: q, mode: "insensitive" } },
+            { artist: { contains: q } },
+            { title:  { contains: q } },
           ],
         },
         take: 50,
       });
       results.push(...pt.map(r => ({ ...r, source: "Party Tyme" })));
     } else {
-      errors.partytyme = "Invalid DATABASE_URL (not file:)";
+      errors.partytyme = "Invalid DATABASE_URL (must start with file:)";
     }
   } catch (e: any) {
     console.error("Party Tyme DB error:", e?.message || e);
     errors.partytyme = e?.message || String(e);
   }
 
-  // KV
+  // --- Karaoke Version (KV)
   try {
     const kvUrl = `${process.env.KV_SEARCH_ENDPOINT}?q=${encodeURIComponent(q)}&aff=${process.env.KV_AFFILIATE_ID}`;
     const kvRes = await fetch(kvUrl, { cache: "no-store" });
@@ -55,10 +56,9 @@ export async function GET(req: Request) {
     errors.kv = e?.message || String(e);
   }
 
-  // YouTube
+  // --- YouTube (absolute URL; don’t rely on NEXT_PUBLIC_APP_URL on the server)
   try {
-    const ytUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/api/youtube?q=${encodeURIComponent(q)}`;
-    const ytRes = await fetch(ytUrl, { cache: "no-store" });
+    const ytRes = await fetch(`${base}/api/youtube?q=${encodeURIComponent(q)}`, { cache: "no-store" });
     const ytData = await ytRes.json();
     if (Array.isArray(ytData?.items)) {
       results.push(...ytData.items.map((it: any) => ({
@@ -78,3 +78,4 @@ export async function GET(req: Request) {
 
   return NextResponse.json({ items: results, total: results.length, errors });
 }
+
