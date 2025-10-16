@@ -34,26 +34,49 @@ export async function GET(req: Request) {
     errors.partytyme = e?.message || String(e);
   }
 
-  // Karaoke Version
-  try {
-    const kvUrl = `${process.env.KV_SEARCH_ENDPOINT}?q=${encodeURIComponent(q)}&aff=${process.env.KV_AFFILIATE_ID}`;
-    const kvRes = await fetch(kvUrl, { cache: "no-store" });
-    const kvData = await kvRes.json();
-    if (Array.isArray(kvData?.items)) {
-      results.push(...kvData.items.map((it: any) => ({
-        source: "Karaoke Version",
-        artist: it.artist,
-        title: it.title,
-        url: it.url,
-        imageUrl: it.imageUrl,
-      })));
-    } else {
-      errors.kv = "KV returned no array";
+  // --- Karaoke Version (KV) with JSON-encoded `query`
+try {
+  const base = (process.env.KV_SEARCH_ENDPOINT || "").replace(/\/+$/, "");
+  const aff  = (process.env.KV_AFFILIATE_ID || "").trim();
+  const payloads = [{ q }, { query: q }, { keyword: q }, { text: q }];
+
+  let added = 0;
+  let lastError: any = null;
+
+  for (const payload of payloads) {
+    const qs   = `query=${encodeURIComponent(JSON.stringify(payload))}${aff ? `&aff=${aff}` : ""}`;
+    const kvUrl = `${base}?${qs}`;
+
+    try {
+      const kvRes = await fetch(kvUrl, { cache: "no-store" });
+      const raw   = await kvRes.text();
+      let data: any = raw; try { data = JSON.parse(raw); } catch {}
+
+      if (kvRes.ok && Array.isArray(data?.items)) {
+        results.push(...data.items.map((it: any) => ({
+          source: "Karaoke Version",
+          artist: it.artist,
+          title:  it.title,
+          url:    it.url,
+          imageUrl: it.imageUrl,
+        })));
+        added = added + (data.items?.length || 0);
+        break; // success
+      } else {
+        lastError = { status: kvRes.status, kvUrl, body: typeof data === "string" ? data.slice(0, 200) : data };
+      }
+    } catch (e: any) {
+      lastError = { kvUrl, error: e?.message || String(e) };
     }
-  } catch (e: any) {
-    console.error("KV error:", e?.message || e);
-    errors.kv = e?.message || String(e);
   }
+
+  if (!added && lastError) {
+    errors.kv = lastError;
+  }
+} catch (e: any) {
+  errors.kv = e?.message || String(e);
+}
+
 
   // YouTube (absolute URL; don’t rely on NEXT_PUBLIC_APP_URL on the server)
   try {
