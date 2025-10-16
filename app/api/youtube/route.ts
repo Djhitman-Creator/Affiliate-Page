@@ -74,10 +74,12 @@ function tokens(s: string) {
 }
 
 function ensureCacheDir() {
-  const dir = path.resolve(".cache/youtube");
-  fs.mkdirSync(dir, { recursive: true });
-  return dir;
+  // On Vercel, /var/task is read-only; /tmp is writable.
+  const base = process.env.YT_CACHE_DIR || (process.env.VERCEL ? "/tmp/.cache/youtube" : ".cache/youtube");
+  fs.mkdirSync(base, { recursive: true });
+  return base;
 }
+
 
 function readJSON(file: string) {
   try {

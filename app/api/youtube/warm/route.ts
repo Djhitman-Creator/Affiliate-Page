@@ -14,10 +14,12 @@ const SECRET = process.env.YT_WARM_SECRET || "";
 const DAILY_COUNT = Math.max(1, Number(process.env.YT_WARM_DAILY_CHANNELS || 12));
 
 function ensureCacheDir() {
-  const d = path.resolve(".cache/youtube");
-  fs.mkdirSync(d, { recursive: true });
-  return d;
+  // On Vercel, /var/task is read-only; /tmp is writable.
+  const base = process.env.YT_CACHE_DIR || (process.env.VERCEL ? "/tmp/.cache/youtube" : ".cache/youtube");
+  fs.mkdirSync(base, { recursive: true });
+  return base;
 }
+
 
 function writeChannelCache(channelId: string, videos: any[]) {
   const file = path.join(ensureCacheDir(), `${channelId}.json`);
