@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { kvSearchSongs } from "../../../lib/kv";
 
 const PT_MERCHANT = process.env.PARTYTYME_MERCHANT ?? "105";
