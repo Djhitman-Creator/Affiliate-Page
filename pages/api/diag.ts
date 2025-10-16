@@ -35,24 +35,54 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY ? "set" : "missing",
     NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV ?? null,
     KV_DISABLED: process.env.KV_DISABLED ?? null,
+    VERCEL: process.env.VERCEL ? "true" : "false",
+    VERCEL_ENV: process.env.VERCEL_ENV ?? null
   };
 
   const checks: Record<string, any> = {};
+
+  // Internal YouTube check (no external quota hit)
   try {
-    const yt = await fetch(`${base}/api/youtube?q=george%20strait`).then(r => r.json());
+    const yt = await fetch(`${base}/api/youtube?q=george%20strait`, { cache: "no-store" }).then(r => r.json());
     checks.youtube = { ok: Array.isArray(yt?.items), count: Array.isArray(yt?.items) ? yt.items.length : 0 };
   } catch (e: any) {
     checks.youtube = { ok: false, error: e?.message || String(e) };
   }
 
-  try {
-    const kvUrl = `${process.env.KV_SEARCH_ENDPOINT}?q=george%20strait&aff=${process.env.KV_AFFILIATE_ID}`;
-    const kv = await fetch(kvUrl).then(r => r.json());
-    checks.kv = { ok: Array.isArray(kv?.items), count: Array.isArray(kv?.items) ? kv.items.length : 0 };
-  } catch (e: any) {
-    checks.kv = { ok: false, error: e?.message || String(e) };
+  // KV check, honoring KV_DISABLED and using realistic request shape/headers
+  const kvDisabled = String(process.env.KV_DISABLED || "").toLowerCase() === "true";
+  if (kvDisabled) {
+    checks.kv = { ok: true, skipped: true, reason: "KV_DISABLED=true" };
+  } else {
+    try {
+      const endpoint = process.env.KV_SEARCH_ENDPOINT || "";
+      const queryParam = encodeURIComponent(JSON.stringify({ q: "george strait" }));
+      const kvUrl = `${endpoint}?query=${queryParam}`;
+
+      const kvRes = await fetch(kvUrl, {
+        headers: {
+          "Referer": base,
+          "Origin": base,
+          "Accept": "application/json"
+        },
+        cache: "no-store"
+      });
+
+      let kvBody: any = null;
+      const text = await kvRes.text();
+      try { kvBody = JSON.parse(text); } catch { kvBody = text.slice(0, 300); }
+
+      checks.kv = {
+        ok: kvRes.ok && Array.isArray((kvBody as any)?.items),
+        status: kvRes.status,
+        count: Array.isArray((kvBody as any)?.items) ? (kvBody as any).items.length : 0,
+        sample: typeof kvBody === "string" ? kvBody : undefined
+      };
+    } catch (e: any) {
+      checks.kv = { ok: false, error: e?.message || String(e) };
+    }
   }
 
-  res.status(200).json({ ok: true, whoami: "pages-api-diag", env, dbCheck, checks });
+  res.status(200).json({ ok: true, whoami: "pages-api-diag", env, dbCheck, checks, base });
 }
 
