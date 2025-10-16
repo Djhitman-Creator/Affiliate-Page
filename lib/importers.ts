@@ -1,6 +1,6 @@
 // lib/importers.ts
 import Papa from "papaparse";
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db";
 
 export type Affiliate = "Karaoke Version" | "Party Tyme";
 

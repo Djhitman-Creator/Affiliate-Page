@@ -2,7 +2,7 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db";
 import type { NextRequest } from "next/server";
 
 /**

@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { PrismaClient } from '@prisma/client';
-const prisma = /* centralized in @/lib/db */ prisma;
+import prisma from "@/lib/db";
 
 const YT_KEY = process.env.YOUTUBE_API_KEY!;
 const CHANNELS = [

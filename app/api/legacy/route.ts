@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 import { NextRequest } from "next/server";
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db";
 
 function norm(s: string) {
   return (s || "")
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   });
 
   // (Optional) tiny extra safety — but most work is done in SQL now
-  const filtered = rows.filter(r => {
+  const filtered = rows.filter((r: any) => {
     const A = r.artistNorm || "";
     const T = r.titleNorm  || "";
     const artistOK = aToks.length === 0 || aToks.every(t => A.includes(t));

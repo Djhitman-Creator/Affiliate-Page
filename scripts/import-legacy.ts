@@ -1,5 +1,5 @@
 // scripts/import-legacy.ts
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db";
 
 function norm(s: string) {
   return (s || "")

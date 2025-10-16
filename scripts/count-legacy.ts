@@ -1,4 +1,5 @@
 // scripts/count-legacy.ts
+import { PrismaClient } from "@prisma/client";
 import prisma from "@/lib/db";
 
 (async () => {

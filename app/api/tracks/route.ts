@@ -25,7 +25,7 @@ export async function GET(req: Request) {
         },
         take: 50,
       });
-      results.push(...pt.map(r => ({ ...r, source: "Party Tyme" })));
+      results.push(...pt.map((r: any) => ({ ...r, source: "Party Tyme" })));
     } else {
       errors.partytyme = "Invalid DATABASE_URL (must start with file:)";
     }
