@@ -2,7 +2,9 @@
   "name": "kara-affiliate-site",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": ">=18.17.0" },
+  "engines": {
+    "node": ">=18.17.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
@@ -27,6 +29,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.7.1",
+    "@types/papaparse": "^5.3.16",
     "@types/react": "19.2.0",
     "autoprefixer": "10.4.20",
     "dotenv": "^17.2.3",
