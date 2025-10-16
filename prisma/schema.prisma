@@ -3,10 +3,10 @@ generator client {
 }
 
 datasource db {
-  // Local development uses SQLite
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
 
 // For production (Vercel, etc.), switch to Postgres by replacing the datasource above with:
 //
