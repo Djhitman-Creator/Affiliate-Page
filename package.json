@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "cross-env DATABASE_URL=file:/tmp/dev.db prisma generate && cross-env DATABASE_URL=file:/tmp/dev.db prisma db push && next build"
+    "build": "cross-env DATABASE_URL='file:/tmp/dev.db' prisma generate && cross-env DATABASE_URL='file:/tmp/dev.db' prisma db push && next build"
     "start": "next start",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
