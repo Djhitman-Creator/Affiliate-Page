@@ -19,7 +19,9 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const baseUrl = `${url.protocol}//${url.host}`;
   const q = (url.searchParams.get("q") || "").trim();
-  if (!q) return NextResponse.json({ items: [], total: 0 });
+  if (!q) {
+    return NextResponse.json({ items: [], total: 0 });
+  }
 
   const results: TrackResult[] = [];
   const errors: Errors = {};                 // strings only
@@ -33,10 +35,14 @@ export async function GET(req: Request) {
     if (dbUrl.startsWith("file:")) {
       const pt = await prisma.track.findMany({
         where: {
-          OR: [{ artist: { contains: q } }, { title: { contains: q } }],
+          OR: [
+            { artist: { contains: q } },
+            { title:  { contains: q } },
+          ],
         },
         take: 50,
       });
+
       results.push(
         ...pt.map((r: any) => ({
           source: "Party Tyme" as const,
@@ -82,7 +88,7 @@ export async function GET(req: Request) {
         const r = await fetch(kvUrl, { cache: "no-store", headers });
         const raw = await r.text();
         let data: any = raw;
-        try { data = JSON.parse(raw); } catch { /* keep snippet as string */ }
+        try { data = JSON.parse(raw); } catch { /* keep raw substring */ }
         return { r, data };
       };
 
@@ -103,7 +109,7 @@ export async function GET(req: Request) {
           }))
         );
       } else {
-        // STRING on errors; details in debug
+        // Keep errors.* as STRING; put rich details in debug.*
         errors.kv = `${r.status} ${kvUrl}`;
         debug.kv = {
           status: r.status,
@@ -141,34 +147,6 @@ export async function GET(req: Request) {
     errors.youtube = e?.message || String(e);      // STRING
   }
 
-  return NextResponse.json({ items: results, total: results.length, errors, debug });
-}
-
-
-
-  // -------------------------
-  // YouTube (App route proxy)
-  // -------------------------
-  try {
-    const ytRes = await fetch(`${baseUrl}/api/youtube?q=${encodeURIComponent(q)}`, { cache: "no-store" });
-    const ytData = await ytRes.json();
-    if (Array.isArray(ytData?.items)) {
-      results.push(
-        ...ytData.items.map((it: any) => ({
-          source: "YouTube" as const,
-          artist: it.artist || "",
-          title: it.title || "",
-          url: it.url,
-          thumbnail: it.thumbnail ?? null,
-        }))
-      );
-    } else {
-      errors.youtube = "YouTube returned no array";
-      debug.youtube = { status: ytRes.status, body: ytData };
-    }
-  } catch (e: any) {
-    errors.youtube = e?.message || String(e);
-  }
-
+  // ✅ This return MUST be inside the GET function (balanced braces above)
   return NextResponse.json({ items: results, total: results.length, errors, debug });
 }
