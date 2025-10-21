@@ -46,10 +46,8 @@ export async function GET(req: Request) {
         },
         take: 50,
       });
-
       results.push(
         ...pt.map((r: any) => ({
-
           source: "Party Tyme" as const,
           artist: r.artist || "",
           title: r.title || "",
