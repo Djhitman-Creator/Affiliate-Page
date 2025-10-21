@@ -13,7 +13,7 @@ type TrackResult = {
   thumbnail?: string | null;
 };
 
-type Errors = Record<string, string>;
+type Errors = Record<string, any>;
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -24,7 +24,11 @@ export async function GET(req: Request) {
   }
 
   const results: TrackResult[] = [];
-  const errors: Errors = {};                 // strings only
+  const errors: Errors = {};
+  const debug: Record<string, any> = {};
+
+  type Errors = Record<string, any>; // allows richer diagnostic objects
+  // strings only
   const debug: Record<string, any> = {};     // rich diagnostics
 
   // -------------------------
@@ -37,7 +41,7 @@ export async function GET(req: Request) {
         where: {
           OR: [
             { artist: { contains: q } },
-            { title:  { contains: q } },
+            { title: { contains: q } },
           ],
         },
         take: 50,
@@ -45,6 +49,7 @@ export async function GET(req: Request) {
 
       results.push(
         ...pt.map((r: any) => ({
+
           source: "Party Tyme" as const,
           artist: r.artist || "",
           title: r.title || "",
@@ -101,6 +106,7 @@ export async function GET(req: Request) {
       if (r.ok && Array.isArray(data?.items)) {
         results.push(
           ...data.items.map((it: any) => ({
+
             source: "Karaoke Version" as const,
             artist: it.artist || "",
             title: it.title || "",
