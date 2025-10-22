@@ -3,6 +3,10 @@
     {
       "path": "/api/admin/refresh/partytyme",
       "schedule": "0 12 * * 1"
+    },
+    {
+      "path": "/api/admin/refresh/all?total=60000&chunk=4000&delayMs=800",
+      "schedule": "0 6 * * *"
     }
   ]
 }
