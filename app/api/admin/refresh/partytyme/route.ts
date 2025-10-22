@@ -39,7 +39,11 @@ const authorized = (req: Request) => {
 type RawRow = { Artist?: string; Title?: string; URL?: string; [k: string]: any };
 
 // Try CSV first; if 404 (or bad), try ZIP->CSV or ZIP->XML
-async function fetchPartyTymeRows(baseUrlCsv?: string, baseUrlZip?: string, headers?: Record<string,string>): Promise<RawRow[]> {
+async function fetchPartyTymeRows(
+  baseUrlCsv?: string,
+  baseUrlZip?: string,
+  headers?: Record<string, string>
+): Promise<RawRow[]> {
   const hdrs = { ...(headers || {}), "cache-control": "no-store" };
 
   // 1) CSV direct
@@ -52,7 +56,7 @@ async function fetchPartyTymeRows(baseUrlCsv?: string, baseUrlZip?: string, head
         skipEmptyLines: true,
         transformHeader: (h) => (h || "").trim(),
       });
-      return (Array.isArray(parsed.data) ? (parsed.data as any[]) : []).map((r) => r as RawRow);
+      return (Array.isArray(parsed.data) ? (parsed.data as any[]) : []) as RawRow[];
     }
   }
 
@@ -62,10 +66,10 @@ async function fetchPartyTymeRows(baseUrlCsv?: string, baseUrlZip?: string, head
     if (!res.ok) throw new Error(`ZIP download failed ${res.status} ${res.statusText}`);
     const buf = Buffer.from(await res.arrayBuffer());
     const zip = new AdmZip(buf);
-    const entries = zip.getEntries();
+    const entries: any[] = zip.getEntries() as any[];
 
     // 2a) Prefer a CSV inside the ZIP if present
-    const csvEntry = entries.find((e) => /\.csv$/i.test(e.entryName));
+    const csvEntry = entries.find((e: any) => /\.csv$/i.test(e.entryName));
     if (csvEntry) {
       const csvText = csvEntry.getData().toString("utf8");
       const parsed = Papa.parse(csvText, {
@@ -73,36 +77,43 @@ async function fetchPartyTymeRows(baseUrlCsv?: string, baseUrlZip?: string, head
         skipEmptyLines: true,
         transformHeader: (h) => (h || "").trim(),
       });
-      return (Array.isArray(parsed.data) ? (parsed.data as any[]) : []).map((r) => r as RawRow);
+      return (Array.isArray(parsed.data) ? (parsed.data as any[]) : []) as RawRow[];
     }
 
     // 2b) Otherwise parse XML (common in PT bundles)
-    const xmlEntry = entries.find((e) => /\.xml$/i.test(e.entryName));
+    const xmlEntry = entries.find((e: any) => /\.xml$/i.test(e.entryName));
     if (xmlEntry) {
       const xmlText = xmlEntry.getData().toString("utf8");
       const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "" });
-      const xml = parser.parse(xmlText);
+      const xml = parser.parse(xmlText) as any;
 
       // Heuristic mapping:
-      // Many PT XMLs look like: <SongList><Song><Artist>..</Artist><Title>..</Title><Link>..</Link></Song>...</SongList>
-      // But we’ll be defensive and search broadly.
       const nodes: any[] =
-        xml?.SongList?.Song ??
-        xml?.Songs?.Song ??
-        xml?.songlist?.song ??
-        xml?.songList?.song ??
-        xml?.songs?.song ??
+        (xml?.SongList?.Song as any[]) ??
+        (xml?.Songs?.Song as any[]) ??
+        (xml?.songlist?.song as any[]) ??
+        (xml?.songList?.song as any[]) ??
+        (xml?.songs?.song as any[]) ??
         [];
 
       if (Array.isArray(nodes)) {
-        return nodes.map((n) => {
+        return nodes.map((n: any) => {
           // Try a variety of key names commonly seen
           const Artist =
             n.Artist ?? n.artist ?? n.Author ?? n.author ?? n.Singer ?? n.singer ?? "";
           const Title =
             n.Title ?? n.title ?? n.Song ?? n.song ?? n.SongTitle ?? n.songTitle ?? "";
           const URL =
-            n.URL ?? n.Url ?? n.url ?? n.Link ?? n.link ?? n.PurchaseURL ?? n.purchaseUrl ?? n.Mp3Link ?? n.mp3Link ?? "";
+            n.URL ??
+            n.Url ??
+            n.url ??
+            n.Link ??
+            n.link ??
+            n.PurchaseURL ??
+            n.purchaseUrl ??
+            n.Mp3Link ??
+            n.mp3Link ??
+            "";
           return { Artist, Title, URL } as RawRow;
         });
       }
@@ -142,18 +153,23 @@ export async function POST(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const limit = Number(searchParams.get("limit") || "2000");
-    const skip  = Number(searchParams.get("skip")  || "0");
+    const skip = Number(searchParams.get("skip") || "0");
 
     const slice = rows.slice(skip, skip + limit);
     const merchant = (process.env.PARTYTYME_MERCHANT || "105").trim();
 
-    let added = 0, updated = 0, skipped = 0;
+    let added = 0,
+      updated = 0,
+      skipped = 0;
 
     for (const raw of slice) {
-      const artist = norm(pick(raw, ["Artist","artist","ARTIST","Author","author","Singer","singer"]));
-      const title  = norm(pick(raw, ["Title","title","Song","SongTitle","song","Track"]));
-      const link   = pick(raw, ["URL","Url","url","Link","PurchaseURL","purchaseUrl","Mp3Link","mp3Link"]);
-      if (!artist || !title) { skipped++; continue; }
+      const artist = norm(pick(raw, ["Artist", "artist", "ARTIST", "Author", "author", "Singer", "singer"]));
+      const title = norm(pick(raw, ["Title", "title", "Song", "SongTitle", "song", "Track"]));
+      const link = pick(raw, ["URL", "Url", "url", "Link", "PurchaseURL", "purchaseUrl", "Mp3Link", "mp3Link"]);
+      if (!artist || !title) {
+        skipped++;
+        continue;
+      }
 
       const urlWithAff = withMerchant(link || null, merchant);
 
