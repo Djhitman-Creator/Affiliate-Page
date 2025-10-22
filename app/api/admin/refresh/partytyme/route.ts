@@ -1,12 +1,17 @@
+// app/api/admin/refresh/partytyme/route.ts
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import Papa from "papaparse";
 import prisma from "@/lib/db";
+import { ensureSqliteTables } from "@/lib/ensureSchema";
 
+// ---- helpers ----
 const norm = (s: any) => String(s ?? "").trim().replace(/\s+/g, " ");
 const pick = (row: Record<string, any>, names: string[]) => {
-  for (const n of names) if (row[n] != null && String(row[n]).trim() !== "") return String(row[n]);
+  for (const n of names) {
+    if (row[n] != null && String(row[n]).trim() !== "") return String(row[n]);
+  }
   return "";
 };
 const withMerchant = (url: string | null | undefined, merchant: string) => {
@@ -20,18 +25,18 @@ const withMerchant = (url: string | null | undefined, merchant: string) => {
     return s.includes("?") ? `${s}&merchant=${merchant}` : `${s}?merchant=${merchant}`;
   }
 };
-
-// Optional: simple token guard. Set PT_IMPORT_SECRET in Vercel if you want to protect this route.
 const authorized = (req: Request) => {
   const need = (process.env.PT_IMPORT_SECRET || "").trim();
   if (!need) return true;
-  const got = new URL(req.url).searchParams.get("secret") || req.headers.get("x-pt-secret") || "";
+  const u = new URL(req.url);
+  const got = u.searchParams.get("secret") || req.headers.get("x-pt-secret") || "";
   return need && got === need;
 };
 
+// ---- POST importer ----
 export async function POST(req: Request) {
   try {
-        // make sure required tables exist in /tmp/dev.db before importing
+    // Ensure tables exist in /tmp/dev.db before any Prisma calls
     await ensureSqliteTables();
 
     if (!authorized(req)) {
@@ -39,7 +44,9 @@ export async function POST(req: Request) {
     }
 
     const url = (process.env.PARTYTYME_CSV_URL || process.env.PARTYTYME_ZIP_URL || "").trim();
-    if (!url) return NextResponse.json({ ok: false, error: "PARTYTYME_CSV_URL (or ZIP) not set" }, { status: 400 });
+    if (!url) {
+      return NextResponse.json({ ok: false, error: "PARTYTYME_CSV_URL (or ZIP) not set" }, { status: 400 });
+    }
 
     const merchant = (process.env.PARTYTYME_MERCHANT || "105").trim();
     const { searchParams } = new URL(req.url);
@@ -47,10 +54,19 @@ export async function POST(req: Request) {
     const skip  = Number(searchParams.get("skip")  || "0");
 
     const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return NextResponse.json({ ok: false, error: `Download failed ${res.status} ${res.statusText}`, url }, { status: 502 });
+    if (!res.ok) {
+      return NextResponse.json(
+        { ok: false, error: `Download failed ${res.status} ${res.statusText}`, url },
+        { status: 502 }
+      );
+    }
 
     const body = await res.text();
-    const parsed = Papa.parse(body, { header: true, skipEmptyLines: true, transformHeader: h => (h || "").trim() });
+    const parsed = Papa.parse(body, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (h) => (h || "").trim(),
+    });
     const rows = Array.isArray(parsed.data) ? (parsed.data as any[]) : [];
     const slice = rows.slice(skip, skip + limit);
 
@@ -65,26 +81,34 @@ export async function POST(req: Request) {
       const urlWithAff = withMerchant(link || null, merchant);
 
       const existing = await prisma.track.findFirst({
-        where: { AND: [{ artist: { equals: artist } }, { title: { equals: title } }] }
+        where: { AND: [{ artist: { equals: artist } }, { title: { equals: title } }] },
       });
 
       if (!existing) {
         await prisma.track.create({
-          data: { artist, title, brand: "Party Tyme", source: "Party Tyme", url: urlWithAff || undefined } as any
+          data: { artist, title, brand: "Party Tyme", source: "Party Tyme", url: urlWithAff || undefined } as any,
         });
         added++;
       } else {
         await prisma.track.update({
           where: { id: (existing as any).id },
-          data: { url: urlWithAff || (existing as any).url || undefined } as any
+          data: { url: urlWithAff || (existing as any).url || undefined } as any,
         });
         updated++;
       }
     }
 
     const count = await prisma.track.count();
-    return NextResponse.json({ ok: true, stats: { totalCsv: rows.length, processed: slice.length, added, updated, skipped, dbCount: count } });
+    return NextResponse.json({
+      ok: true,
+      stats: { totalCsv: rows.length, processed: slice.length, added, updated, skipped, dbCount: count },
+    });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message || String(e) }, { status: 500 });
   }
+}
+
+// Optional: allow GET from browser address bar to run the same import
+export async function GET(req: Request) {
+  return POST(req);
 }
