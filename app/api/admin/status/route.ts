@@ -1,49 +1,71 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 // app/api/admin/status/route.ts
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
 
 export async function GET() {
   try {
-    // Latest 10 Party Tyme runs
-    const runs = await prisma.importRun.findMany({
-      where: { source: "Party Tyme" },
-      orderBy: [
-        { startedAt: "desc" }, // your schema uses startedAt, not createdAt
-        { id: "desc" },
-      ],
-      take: 10,
-      select: {
-        id: true,
-        source: true,
-        startedAt: true,
-        finishedAt: true,
-        added: true,
-        updated: true,
-        skipped: true,
-        error: true,
-        details: true,
-      },
-    });
+    // Basic counts
+    const trackCount = await prisma.track.count().catch(() => 0);
 
-    const last = runs[0] ?? null;
+    // Latest timestamps (useful “freshness” signal)
+    const latestTrack = await prisma.track.findFirst({
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    }).catch(() => null);
+
+    // Optional: legacy count if you added the model
+    let legacyCount = 0;
+    let latestLegacy: Date | null = null;
+    try {
+      const p: any = prisma as any;
+      if (p?.legacyTrack?.count) {
+        legacyCount = await p.legacyTrack.count();
+      }
+      if (p?.legacyTrack?.findFirst) {
+        const ll = await p.legacyTrack.findFirst({
+          orderBy: { createdAt: "desc" },
+          select: { createdAt: true },
+        });
+        latestLegacy = ll?.createdAt ?? null;
+      }
+    } catch {
+      // ignore if model doesn't exist
+    }
+
+    // Optional: import runs if you *later* add an ImportRun model
+    let runs: Array<any> = [];
+    try {
+      const p: any = prisma as any;
+      if (p?.importRun?.findMany) {
+        runs = await p.importRun.findMany({
+          where: { source: "Party Tyme" },
+          orderBy: [{ startedAt: "desc" }],
+          take: 10,
+        });
+      }
+    } catch {
+      // ignore if model doesn't exist
+    }
 
     return NextResponse.json({
       ok: true,
-      last,
-      history: runs,
-      envSeen: {
-        PARTYTYME_ZIP_URL: process.env.PARTYTYME_ZIP_URL ?? null,
-        PARTYTYME_CSV_URL: process.env.PARTYTYME_CSV_URL ?? null,
+      counts: {
+        tracks: trackCount,
+        legacy: legacyCount,
       },
+      latest: {
+        trackCreatedAt: latestTrack?.createdAt ?? null,
+        legacyCreatedAt: latestLegacy,
+      },
+      runs, // empty array unless an ImportRun model exists
     });
-  } catch (err: any) {
+  } catch (e: any) {
     return NextResponse.json(
-      { ok: false, error: err?.message ?? "Failed to load status" },
+      { ok: false, error: e?.message || String(e) },
       { status: 500 }
     );
   }
 }
+
