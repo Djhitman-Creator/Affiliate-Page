@@ -133,24 +133,16 @@ export async function upsertTrack(input: {
 
   // If we have a trackId, prefer (source + trackId)
   if (trackId) {
-    // Upgrade any legacy row with same (source+artist+title) but null trackId
-    const orphan = await prisma.track.findFirst({
-      where: { source, artist, title, trackId: null },
-      select: { id: true },
-    });
-    if (orphan) {
-      await prisma.track.update({
-        where: { id: orphan.id },
-        data: {
-          trackId,
-          artist,
-          title,
-          brand: brand ?? null,
-          purchaseUrl: purchaseUrl ?? null,
-        },
-      });
-      return "updated";
-    }
+    // Find any existing track with the same (source + artist + title)
+const orphan = await prisma.track.findFirst({
+  where: { source, artist, title },
+  select: { id: true },
+});
+if (orphan) {
+  // (no trackId field on Track anymore; keep whatever you were doing here
+  // EXCEPT do not read/write trackId on Track)
+}
+
 
     // Normal upsert by composite key
     const existing = await prisma.track.findUnique({
