@@ -39,6 +39,95 @@ const authorized = (req: Request) => {
 type RawRow = { Artist?: string; Title?: string; URL?: string; [k: string]: any };
 type FetchResult = { rows: RawRow[]; info: Record<string, any> };
 
+// --- XML utilities: flexible song extraction ---
+const ARTIST_KEYS = [
+  "Artist","artist","Author","author","Singer","singer","Performer","performer","Band","band","Composer","composer"
+];
+const TITLE_KEYS = [
+  "Title","title","Song","song","SongTitle","songTitle","Track","track","Name","name"
+];
+const URL_KEYS = [
+  "URL","Url","url","Link","link","PurchaseURL","purchaseUrl","Mp3Link","mp3Link","href","src"
+];
+
+/** returns first non-empty string field from a set of keys (checks object values and attributes) */
+function getField(obj: any, keys: string[]): string {
+  for (const k of keys) {
+    if (obj && typeof obj === "object") {
+      if (obj[k] != null && String(obj[k]).trim() !== "") return String(obj[k]).trim();
+      // some XML parsers place values under attributes or nested objects
+      if (obj?.attributes && obj.attributes[k] != null) {
+        const v = String(obj.attributes[k]).trim();
+        if (v) return v;
+      }
+      // sometimes values are like { k: { "#text": "..." } }
+      if (obj[k] && typeof obj[k] === "object" && obj[k]["#text"]) {
+        const v = String(obj[k]["#text"]).trim();
+        if (v) return v;
+      }
+    }
+  }
+  return "";
+}
+
+/** heuristic: does node look like a song row? */
+function looksLikeSong(node: any): boolean {
+  if (!node || typeof node !== "object") return false;
+  const a = getField(node, ARTIST_KEYS);
+  const t = getField(node, TITLE_KEYS);
+  return !!(a && t);
+}
+
+/** recursively walk any XML-shaped JS object and collect song-like nodes */
+function extractRowsFromXml(xml: any, info: Record<string, any>): RawRow[] {
+  const rows: RawRow[] = [];
+  const seenShapes = new Map<string, number>();
+
+  function recordShape(obj: any) {
+    if (!obj || typeof obj !== "object") return;
+    const keys = Object.keys(obj).slice(0, 30).sort();
+    const sig = keys.join(",");
+    seenShapes.set(sig, (seenShapes.get(sig) || 0) + 1);
+  }
+
+  function visit(node: any) {
+    if (!node) return;
+    if (Array.isArray(node)) {
+      for (const item of node) visit(item);
+      return;
+    }
+    if (typeof node !== "object") return;
+
+    recordShape(node);
+
+    // If it already looks like a song, extract it
+    if (looksLikeSong(node)) {
+      const Artist = getField(node, ARTIST_KEYS);
+      const Title  = getField(node, TITLE_KEYS);
+      const URL    = getField(node, URL_KEYS);
+      rows.push({ Artist, Title, URL });
+      // don't return; siblings may also contain nested additional data
+    }
+
+    // Otherwise, keep drilling down into child objects/arrays
+    for (const k of Object.keys(node)) {
+      const v = (node as any)[k];
+      if (v && (typeof v === "object" || Array.isArray(v))) visit(v);
+    }
+  }
+
+  visit(xml);
+
+  // expose top shapes to debug
+  info.xmlShapes = Array.from(seenShapes.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([sig, count]) => ({ count, keys: sig.split(",") }));
+
+  info.xmlExtracted = rows.length;
+  return rows;
+}
+
 // Try CSV first; if empty/not-OK, try ZIP (CSV inside) else ZIP (XML inside).
 async function fetchPartyTymeRows(
   baseUrlCsv?: string,
@@ -102,47 +191,21 @@ async function fetchPartyTymeRows(
       if (rows.length > 0) return { rows, info };
     }
 
-    // 2b) Otherwise XML inside ZIP
+    // 2b) Otherwise XML inside ZIP (flexible parser)
     const xmlEntry = entries.find((e: any) => /\.xml$/i.test(e.entryName));
     if (xmlEntry) {
       const xmlText = xmlEntry.getData().toString("utf8");
       info.zip.xmlSample = xmlText.slice(0, 400);
-      const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "" });
+      const parser = new XMLParser({
+        ignoreAttributes: false,
+        attributeNamePrefix: "",
+        textNodeName: "#text",
+        // preserve order not required; we recurse anyway
+      });
       const xml: any = parser.parse(xmlText);
-
-      const candidates: any[] =
-        (xml?.SongList?.Song as any[]) ??
-        (xml?.Songs?.Song as any[]) ??
-        (xml?.songlist?.song as any[]) ??
-        (xml?.songList?.song as any[]) ??
-        (xml?.songs?.song as any[]) ??
-        [];
-
-      info.zip.xmlNodeCount = Array.isArray(candidates) ? candidates.length : 0;
-
-      if (Array.isArray(candidates) && candidates.length > 0) {
-        const rows = candidates.map((n: any) => {
-          const Artist =
-            n.Artist ?? n.artist ?? n.Author ?? n.author ?? n.Singer ?? n.singer ?? "";
-          const Title =
-            n.Title ?? n.title ?? n.Song ?? n.song ?? n.SongTitle ?? n.songTitle ?? "";
-          const URL =
-            n.URL ??
-            n.Url ??
-            n.url ??
-            n.Link ??
-            n.link ??
-            n.PurchaseURL ??
-            n.purchaseUrl ??
-            n.Mp3Link ??
-            n.mp3Link ??
-            "";
-        return { Artist, Title, URL } as RawRow;
-        });
-        return { rows, info };
-      }
-
-      throw new Error("ZIP contained XML but structure was unrecognized.");
+      const rows = extractRowsFromXml(xml, info);
+      if (rows.length > 0) return { rows, info };
+      throw new Error("ZIP XML parsed but no song-like nodes were found.");
     }
 
     throw new Error("ZIP contained no parsable CSV or XML data.");
@@ -195,8 +258,8 @@ export async function POST(req: Request) {
 
     for (const raw of slice) {
       const artist = norm(pick(raw, ["Artist", "artist", "ARTIST", "Author", "author", "Singer", "singer"]));
-      const title  = norm(pick(raw, ["Title", "title", "Song", "SongTitle", "song", "Track"]));
-      const link   = pick(raw, ["URL", "Url", "url", "Link", "PurchaseURL", "purchaseUrl", "Mp3Link", "mp3Link"]);
+      const title  = norm(pick(raw, ["Title", "title", "Song", "SongTitle", "song", "Track", "Name", "name"]));
+      const link   = pick(raw, ["URL", "Url", "url", "Link", "PurchaseURL", "purchaseUrl", "Mp3Link", "mp3Link", "href", "src"]);
       if (!artist || !title) { skipped++; continue; }
 
       const urlWithAff = withMerchant(link || null, merchant);
