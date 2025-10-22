@@ -80,6 +80,12 @@ function ytThumb(videoId: string, size: 'mq' | 'hq' = 'mq') {
     : `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 }
 
+// unified URL picker: prefers purchaseUrl/buyUrl, falls back to `url`
+function urlOf(t: any): string {
+  return String(t?.purchaseUrl || t?.buyUrl || t?.url || "").trim();
+}
+
+
 function JetSpinner({ size = 24 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 38 38" stroke="currentColor" className="animate-spin">
@@ -103,9 +109,9 @@ function JetSpinner({ size = 24 }: { size?: number }) {
 }
 
 function BuyButton({ item }: { item: Row }) {
-  const href = item.purchaseUrl || item.buyUrl || '';
+  const href = urlOf(item);
   if (!href) return null;
-  const label = item.brandDisplay ?? item.brand ?? 'Store';
+  const label = item.brandDisplay ?? item.brand ?? "Store";
 
   return (
     <a
@@ -125,6 +131,7 @@ function BuyButton({ item }: { item: Row }) {
     </a>
   );
 }
+
 
 // Shows today's date (no time), forced white text both themes
 function LastUpdatedNote({ className = "" }: { className?: string }) {
@@ -267,7 +274,7 @@ export default function Page() {
 
           const filtered = Array.isArray(json.items)
             ? json.items.filter((it: any) => {
-              const url = it.purchaseUrl || it.buyUrl || '';
+              const url = urlOf(it);
               const isKV = isKaraokeVersionHost(url);
 
               const A = norm(it.artist);
@@ -529,7 +536,7 @@ export default function Page() {
               >
                 <td className="text-black dark:text-white">
                   {(() => {
-                    const url = t.purchaseUrl || t.buyUrl || '';
+                    const url = urlOf(t);
                     if (isKaraokeVersionHost(url)) {
                       const pretty = titleCase(kvArtistFromUrl(url));
                       return pretty || t.artist || '-';
@@ -543,7 +550,7 @@ export default function Page() {
                 {/* Legacy cell */}
                 <td className="text-black dark:text-white">
                   {(() => {
-                    const url = String(t.purchaseUrl || t.buyUrl || '');
+                    const url = urlOf(t);
                     const preferArtist = isKaraokeVersionHost(url) ? kvArtistFromUrl(url) || t.artist : t.artist;
                     const preferTitle = isKaraokeVersionHost(url) ? kvSlugFromUrl(url) || t.title : t.title;
                     const key = `${norm(preferArtist)}|||${norm(preferTitle)}`;

@@ -9,6 +9,7 @@ type TrackResult = {
   source: "Party Tyme" | "Karaoke Version" | "YouTube";
   artist: string;
   title: string;
+  brand?: string | null;
   url?: string;
   imageUrl?: string | null;
   thumbnail?: string | null;
@@ -20,11 +21,9 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const baseUrl = `${url.protocol}//${url.host}`;
   const q = (url.searchParams.get("q") || "").trim();
-  if (!q) {
-    return NextResponse.json({ items: [], total: 0 });
-  }
+  if (!q) return NextResponse.json({ items: [], total: 0 });
 
-  // Ensure /tmp SQLite tables exist before any Prisma calls (Vercel cold starts)
+  // Ensure /tmp SQLite tables exist before Prisma calls (Vercel cold starts)
   await ensureSqliteTables();
 
   const results: TrackResult[] = [];
@@ -38,9 +37,7 @@ export async function GET(req: Request) {
     const dbUrl = process.env.DATABASE_URL || "";
     if (dbUrl.startsWith("file:")) {
       const pt = await prisma.track.findMany({
-        where: {
-          OR: [{ artist: { contains: q } }, { title: { contains: q } }],
-        },
+        where: { OR: [{ artist: { contains: q } }, { title: { contains: q } }] },
         take: 50,
       });
       results.push(
@@ -48,6 +45,7 @@ export async function GET(req: Request) {
           source: "Party Tyme" as const,
           artist: r.artist || "",
           title: r.title || "",
+          brand: r.brand || "Party Tyme",
           url: r.url || undefined,
           imageUrl: (r as any).imageUrl ?? null,
         }))
@@ -88,17 +86,13 @@ export async function GET(req: Request) {
         const r = await fetch(kvUrl, { cache: "no-store", headers });
         const raw = await r.text();
         let data: any = raw;
-        try {
-          data = JSON.parse(raw);
-        } catch {
-          /* keep raw substring */
-        }
+        try { data = JSON.parse(raw); } catch {}
         return { r, data };
       };
 
       let { r, data } = await hit();
       if ((!r.ok || !Array.isArray((data as any)?.items)) && (r.status === 429 || r.status >= 500)) {
-        await new Promise((res) => setTimeout(res, 600));
+        await new Promise(res => setTimeout(res, 600));
         ({ r, data } = await hit());
       }
 
@@ -108,13 +102,13 @@ export async function GET(req: Request) {
             source: "Karaoke Version" as const,
             artist: it.artist || "",
             title: it.title || "",
+            brand: "Karaoke Version",
             url: it.url,
             imageUrl: it.imageUrl ?? null,
           }))
         );
       } else {
-        // Keep errors.* as STRING; put rich details in debug.*
-        errors.kv = `${r.status} ${kvUrl}`;
+        errors.kv = `${r.status} ${kvUrl}`; // keep string
         debug.kv = {
           status: r.status,
           kvUrl,
@@ -123,7 +117,7 @@ export async function GET(req: Request) {
       }
     }
   } catch (e: any) {
-    errors.kv = e?.message || String(e); // STRING
+    errors.kv = e?.message || String(e);
     debug.kv = { error: e?.message || String(e) };
   }
 
@@ -139,16 +133,17 @@ export async function GET(req: Request) {
           source: "YouTube" as const,
           artist: it.artist || "",
           title: it.title || "",
+          brand: it.brand || "YouTube", // show something useful in Brand column
           url: it.url,
           thumbnail: it.thumbnail ?? null,
         }))
       );
     } else {
-      errors.youtube = "YouTube returned no array"; // STRING
+      errors.youtube = "YouTube returned no array";
       debug.youtube = { status: ytRes.status, body: ytData };
     }
   } catch (e: any) {
-    errors.youtube = e?.message || String(e); // STRING
+    errors.youtube = e?.message || String(e);
   }
 
   return NextResponse.json({ items: results, total: results.length, errors, debug });
