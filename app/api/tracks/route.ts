@@ -23,7 +23,7 @@ export async function GET(req: Request) {
   const q = (url.searchParams.get("q") || "").trim();
   if (!q) return NextResponse.json({ items: [], total: 0 });
 
-  // Ensure /tmp SQLite tables exist before Prisma calls (Vercel cold starts)
+  // No-op on Postgres; harmless to keep
   await ensureSqliteTables();
 
   const results: TrackResult[] = [];
@@ -31,28 +31,29 @@ export async function GET(req: Request) {
   const debug: Record<string, any> = {};
 
   // -------------------------
-  // Party Tyme (SQLite via Prisma)
+  // Party Tyme (Prisma on any provider)
   // -------------------------
   try {
-    const dbUrl = process.env.DATABASE_URL || "";
-    if (dbUrl.startsWith("file:")) {
-      const pt = await prisma.track.findMany({
-        where: { OR: [{ artist: { contains: q } }, { title: { contains: q } }] },
-        take: 50,
-      });
-      results.push(
-        ...pt.map((r: any) => ({
-          source: "Party Tyme" as const,
-          artist: r.artist || "",
-          title: r.title || "",
-          brand: r.brand || "Party Tyme",
-          url: r.url || undefined,
-          imageUrl: (r as any).imageUrl ?? null,
-        }))
-      );
-    } else {
-      errors.partytyme = "Invalid DATABASE_URL (must start with file:)";
-    }
+    const pt = await prisma.track.findMany({
+      where: {
+        OR: [
+          { artist: { contains: q } },
+          { title:  { contains: q } },
+        ],
+      },
+      take: 50,
+    });
+
+    results.push(
+      ...pt.map((r: any) => ({
+        source: "Party Tyme" as const,
+        artist: r.artist || "",
+        title: r.title || "",
+        brand: r.brand || "Party Tyme",
+        url: r.url || undefined,
+        imageUrl: (r as any).imageUrl ?? null,
+      })),
+    );
   } catch (e: any) {
     errors.partytyme = e?.message || String(e);
   }
@@ -63,7 +64,7 @@ export async function GET(req: Request) {
   try {
     const kvDisabled = String(process.env.KV_DISABLED || "").toLowerCase() === "true";
     if (kvDisabled) {
-      errors.kv = "disabled by KV_DISABLED env"; // STRING
+      errors.kv = "disabled by KV_DISABLED env"; // keep string
     } else {
       const kvEndpoint = (process.env.KV_SEARCH_ENDPOINT || "").replace(/\/+$/, "");
       const aff = (process.env.KV_AFFILIATE_ID || "").trim();
@@ -105,10 +106,10 @@ export async function GET(req: Request) {
             brand: "Karaoke Version",
             url: it.url,
             imageUrl: it.imageUrl ?? null,
-          }))
+          })),
         );
       } else {
-        errors.kv = `${r.status} ${kvUrl}`; // keep string
+        errors.kv = `${r.status} ${kvUrl}`; // keep error as string
         debug.kv = {
           status: r.status,
           kvUrl,
@@ -133,10 +134,10 @@ export async function GET(req: Request) {
           source: "YouTube" as const,
           artist: it.artist || "",
           title: it.title || "",
-          brand: it.brand || "YouTube", // show something useful in Brand column
+          brand: it.brand || "YouTube",
           url: it.url,
           thumbnail: it.thumbnail ?? null,
-        }))
+        })),
       );
     } else {
       errors.youtube = "YouTube returned no array";
@@ -148,4 +149,3 @@ export async function GET(req: Request) {
 
   return NextResponse.json({ items: results, total: results.length, errors, debug });
 }
-
