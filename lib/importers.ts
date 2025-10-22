@@ -24,11 +24,11 @@ function withMerchant(url: string | null | undefined): string | null {
 /** Try hard to extract a Party Tyme code like PY22138 from any raw field */
 function extractPtTrackId(raw: Record<string, any>): string | null {
   const keys = [
-    "trackId","TrackId","id","Id","ID",
-    "code","Code","productCode","ProductCode",
-    "sku","SKU","item","Item","itemNumber","ItemNumber",
-    "catalog","Catalog","catalogNumber","CatalogNumber",
-    "number","Number","no","No"
+    "trackId", "TrackId", "id", "Id", "ID",
+    "code", "Code", "productCode", "ProductCode",
+    "sku", "SKU", "item", "Item", "itemNumber", "ItemNumber",
+    "catalog", "Catalog", "catalogNumber", "CatalogNumber",
+    "number", "Number", "no", "No"
   ];
 
   const candidates: string[] = [];
@@ -123,7 +123,7 @@ export async function upsertTrack(input: {
 
   const source = asStr(input.source) ?? "Unknown";
   const artist = asStr(input.artist);
-  const title  = asStr(input.title);
+  const title = asStr(input.title);
   const trackId = asStr(input.trackId);
   const brand = asStr(input.brand);
   const purchaseUrl = asStr(input.purchaseUrl);
@@ -134,21 +134,22 @@ export async function upsertTrack(input: {
   // If we have a trackId, prefer (source + trackId)
   if (trackId) {
     // Find any existing track with the same (source + artist + title)
-const orphan = await prisma.track.findFirst({
-  where: { source, artist, title },
-  select: { id: true },
-});
-if (orphan) {
-  // (no trackId field on Track anymore; keep whatever you were doing here
-  // EXCEPT do not read/write trackId on Track)
-}
-
-
-    // Normal upsert by composite key
-    const existing = await prisma.track.findUnique({
-      where: { source_trackId: { source, trackId } },
+    const orphan = await prisma.track.findFirst({
+      where: { source, artist, title },
       select: { id: true },
     });
+    if (orphan) {
+      // (no trackId field on Track anymore; keep whatever you were doing here
+      // EXCEPT do not read/write trackId on Track)
+    }
+
+
+    // Normal upsert using (source + artist + title) match
+    const existing = await prisma.track.findFirst({
+      where: { source, artist, title },
+      select: { id: true },
+    });
+
 
     await prisma.track.upsert({
       where: { source_trackId: { source, trackId } },
@@ -178,26 +179,26 @@ if (orphan) {
   });
 
   if (existingByTitle) {
-    await prisma.track.update({
-      where: { id: existingByTitle.id },
-      data: {
-        brand: brand ?? null,
-        purchaseUrl: purchaseUrl ?? null,
-      },
-    });
-    return "updated";
-  }
-
-  await prisma.track.create({
+  await prisma.track.update({
+    where: { id: existingByTitle.id },
     data: {
-      source,
-      artist,
-      title,
       brand: brand ?? null,
-      purchaseUrl: purchaseUrl ?? null,
-      trackId: null,
+      url: purchaseUrl ?? null, // map your variable to the existing 'url' column
     },
   });
+  return "updated";
+}
+
+await prisma.track.create({
+  data: {
+    source,
+    artist,
+    title,
+    brand: brand ?? null,
+    url: purchaseUrl ?? null, // use 'url' (Track has no 'purchaseUrl' column)
+  },
+});
+
 
   return "added";
 }
