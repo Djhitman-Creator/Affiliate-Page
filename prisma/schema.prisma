@@ -1,108 +1,24 @@
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
+  // Keep sqlite for now to match file:/tmp/dev.db on Vercel
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-
-// For production (Vercel, etc.), switch to Postgres by replacing the datasource above with:
-//
-// datasource db {
-//   provider = "postgresql"
-//   url      = env("DATABASE_URL")
-// }
+// ---- Models ----
 
 model Track {
-  id          String   @id @default(cuid())
-  artist      String
-  title       String
-  trackId     String?
-  brand       String?   // e.g., Karaoke-Version, Party Tyme HD
-  purchaseUrl String?
-  source      String    // 'Karaoke Version' | 'Party Tyme'
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  @@index([artist, title])
-  @@unique([source, trackId])
-}
-model ImportRun {
-  id         String   @id @default(cuid())
-  source     String
-  startedAt  DateTime @default(now())
-  finishedAt DateTime?
-  added      Int      @default(0)
-  updated    Int      @default(0)
-  skipped    Int      @default(0)
-  error      String?
-  details    String?  // JSON string when using SQLite
-}
-model KvSearchCache {
-  id         Int      @id @default(autoincrement())
-  query      String
-  page       Int
-  pageSize   Int
-  payload    String       // <- store JSON as a string (SQLite-friendly)
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@unique([query, page, pageSize], map: "query_page_pageSize")
-}
-model YoutubeCache {
   id        Int      @id @default(autoincrement())
-  // normalized query (lowercased/trimmed)
-  query     String
-  // payload we returned (items + optional debug), stored as JSON string
-    payload   String
+  artist    String
+  title     String
+  brand     String?
+  source    String?
+  url       String?
+  imageUrl  String?
   createdAt DateTime @default(now())
-  // do not serve past this time
-  expiresAt DateTime
-
-  @@index([query])
 }
-model YoutubeVideo {
-  id            String   @id @default(cuid())
-  videoId       String   @unique
-  channelHandle String
-  channelLabel  String
-  title         String
-  titleNorm     String
-  publishedAt   DateTime
-  thumbnail     String?
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // ✅ Indexes
-  @@index([titleNorm])                       // search-by-token
-  @@index([channelHandle, publishedAt])      // fast per-channel sorting
-}
-
-
-model YoutubeMeta {
-  id          Int      @id @default(1)
-  lastIndexed DateTime?
-}
-
-model LegacyTrack {
-  id         Int     @id @default(autoincrement())
-  artist     String
-  title      String
-  labelCode  String   // e.g., SC, CB, PI, SF, THMP, TU, etc.
-  discId     String   // e.g., SC8493-05, CB90018-02
-  trackNo    String?  // optional
-  notes      String?  // optional
-
-  // normalized helpers
-  artistNorm String
-  titleNorm  String
-
-  @@index([artistNorm, titleNorm])
-  @@index([discId])
-}
-
-
