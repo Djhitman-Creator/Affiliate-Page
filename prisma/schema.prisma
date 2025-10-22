@@ -22,3 +22,18 @@ model Track {
   imageUrl  String?
   createdAt DateTime @default(now())
 }
+
+model LegacyTrack {
+  id        Int      @id @default(autoincrement())
+  artist    String
+  title     String
+  brand     String?   // manufacturer (Sound Choice, Chartbuster, Sunfly, etc.)
+  discId    String?   // e.g. SC8139-05
+  url       String?   // optional (wiki/discogs page, etc.)
+  createdAt DateTime  @default(now())
+
+  @@index([artist])
+  @@index([title])
+  @@index([brand])
+  @@unique([artist, title, brand, discId])
+}
