@@ -31,6 +31,9 @@ const authorized = (req: Request) => {
 
 export async function POST(req: Request) {
   try {
+        // make sure required tables exist in /tmp/dev.db before importing
+    await ensureSqliteTables();
+
     if (!authorized(req)) {
       return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
     }

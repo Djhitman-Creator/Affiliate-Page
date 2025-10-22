@@ -3,6 +3,8 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import { ensureSqliteTables } from "@/lib/ensureSchema";
+
 
 type TrackResult = {
   source: "Party Tyme" | "Karaoke Version" | "YouTube";
