@@ -5,9 +5,9 @@ generator client {
 }
 
 datasource db {
-  // Keep sqlite for now to match file:/tmp/dev.db on Vercel
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ---- Models ----
