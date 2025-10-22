@@ -1,8 +1,8 @@
-﻿{
-    "crons":  [
-                  {
-                      "path":  "/api/admin/refresh/all?total=60000\u0026chunk=4000\u0026delayMs=800",
-                      "schedule":  "0 6 * * *"
-                  }
-              ]
+{
+  "crons": [
+    {
+      "path": "/api/admin/refresh/all?total=60000&chunk=4000&delayMs=800",
+      "schedule": "0 6 * * *"
+    }
+  ]
 }
