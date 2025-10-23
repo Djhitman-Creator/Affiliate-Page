@@ -110,19 +110,63 @@ export async function upsertTrack(input: {
   source: string;          // "Party Tyme" | "Karaoke Version"
   artist?: any;
   title?: any;
-  trackId?: any;           // accepted but NOT stored (schema has no trackId); kept for parsing/building URLs only
+  trackId?: any;           // SKU/code if present (e.g., PY22138)
   brand?: any;
   purchaseUrl?: any;
-}): Promise<UpsertOutcome> {
+}): Promise<"added" | "updated" | "skipped"> {
+  const toText = (v: any): string | null => {
+    if (v === undefined || v === null) return null;
+    if (typeof v === "string") return v.trim() || null;
+    if (typeof v === "number" || typeof v === "boolean") return String(v).trim() || null;
+    if (Array.isArray(v)) return toText(v[0]);
+    if (typeof v === "object") {
+      for (const k of ["#text", "_", "value", "text"]) {
+        if ((v as any)[k] != null) return toText((v as any)[k]);
+      }
+      try {
+        const s = (v as any).toString ? (v as any).toString() : JSON.stringify(v);
+        return String(s).trim() || null;
+      } catch { return null; }
+    }
+    return null;
+  };
+
   const source = toText(input.source) ?? "Unknown";
   const artist = toText(input.artist);
   const title = toText(input.title);
   const brand = toText(input.brand);
   const purchaseUrl = toText(input.purchaseUrl);
-  // input.trackId intentionally ignored in DB writes (no trackId column)
+  const trackId = toText(input.trackId); // may be null/undefined
 
   if (!artist || !title) return "skipped";
 
+  // If we have a trackId, use (source + trackId) as the unique key (requires @@unique([source, trackId]))
+  if (trackId) {
+    await prisma.track.upsert({
+      where: { source_trackId: { source, trackId } }, // <-- requires the schema change above
+      create: {
+        source,
+        artist,
+        title,
+        brand: brand ?? null,
+        trackId,
+        url: purchaseUrl ?? null,
+        purchaseUrl: purchaseUrl ?? null,
+        imageUrl: null,
+      },
+      update: {
+        artist,
+        title,
+        brand: brand ?? null,
+        url: purchaseUrl ?? null,
+        purchaseUrl: purchaseUrl ?? null,
+        imageUrl: null,
+      },
+    });
+    return "added"; // upsert did add-or-update; we treat success as “added” for simplicity
+  }
+
+  // Fallback: no trackId — dedupe by (source + artist + title)
   const existing = await prisma.track.findFirst({
     where: { source, artist, title },
     select: { id: true },
@@ -132,12 +176,10 @@ export async function upsertTrack(input: {
     await prisma.track.update({
       where: { id: existing.id },
       data: {
-        // keep keys stable (optionally re-set to normalize casing/spacing)
         source,
         artist,
         title,
         brand: brand ?? null,
-        // write to both fields for compatibility with existing UI
         url: purchaseUrl ?? null,
         purchaseUrl: purchaseUrl ?? null,
         imageUrl: null,
@@ -159,6 +201,7 @@ export async function upsertTrack(input: {
   });
   return "added";
 }
+
 
 /** Normalize common CSV headers into our row shape. */
 function normalizeRowFromCsv(r: RawRow) {

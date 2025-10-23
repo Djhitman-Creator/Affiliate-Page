@@ -13,16 +13,20 @@ datasource db {
 // ---- Models ----
 
 model Track {
-  id        Int      @id @default(autoincrement())
-  artist    String
-  title     String
-  brand     String?
-  source    String?
-  url       String?
-  imageUrl  String?
-  createdAt DateTime @default(now())
-  purchaseUrl String?
+  id           Int      @id @default(autoincrement())
+  source       String?
+  artist       String
+  title        String
+  brand        String?
+  trackId      String?      // NEW: Party Tyme / KV product code or SKU
+  url          String?
+  purchaseUrl  String?
+  imageUrl     String?
+  createdAt    DateTime @default(now())
+
+  @@unique([source, trackId], name: "source_trackId") // NEW: one row per SKU when trackId is present
 }
+
 
 model LegacyTrack {
   id        Int      @id @default(autoincrement())
