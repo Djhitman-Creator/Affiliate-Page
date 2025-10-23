@@ -59,68 +59,61 @@ export async function GET(req: Request) {
   }
 
   // -------------------------
-  // Karaoke Version (KV) — feature-flag guarded
-  // -------------------------
-  try {
-    const kvDisabled = String(process.env.KV_DISABLED || "").toLowerCase() === "true";
-    if (kvDisabled) {
-      errors.kv = "disabled by KV_DISABLED env"; // keep string
+// Karaoke Version (KV) — JSON payload via ?query=... (no special headers)
+// Docs: https://affiliate.recisio.com/karaoke-version/webservice.html
+// -------------------------
+try {
+  const kvDisabled = String(process.env.KV_DISABLED || "").toLowerCase() === "true";
+  if (kvDisabled) {
+    errors.kv = "disabled by KV_DISABLED env";
+  } else {
+    const kvEndpointRaw = (process.env.KV_SEARCH_ENDPOINT || "").trim();
+    const kvEndpoint = kvEndpointRaw || "https://www.karaoke-version.com/api/search/";
+    const affiliateId = Number(process.env.KV_AFFILIATE_ID || "1048");
+
+    // Build the JSON payload they require, then URL-encode it into ?query=
+    const payload = {
+      affiliateId,
+      function: "search",
+      parameters: { query: q },
+    };
+    const qs = new URLSearchParams({ query: JSON.stringify(payload) });
+    const kvUrl = `${kvEndpoint.replace(/\/+$/, "/")}?${qs.toString()}`;
+
+    // No special headers needed per KV support
+    const r = await fetch(kvUrl, { cache: "no-store" });
+    const raw = await r.text();
+    let data: any = raw;
+    try { data = JSON.parse(raw); } catch {}
+
+    // Accept either an array or { items: [...] }
+    const arr = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : null;
+
+    if (r.ok && Array.isArray(arr)) {
+      results.push(
+        ...arr.map((it: any) => ({
+          source: "Karaoke Version" as const,
+          artist: it.artist || it.singer || "",
+          title: it.title || it.name || "",
+          brand: "Karaoke Version",
+          url: it.url || it.link || undefined,
+          imageUrl: it.imageUrl || it.image || it.cover || null,
+        })),
+      );
     } else {
-      const kvEndpoint = (process.env.KV_SEARCH_ENDPOINT || "").replace(/\/+$/, "");
-      const aff = (process.env.KV_AFFILIATE_ID || "").trim();
-
-      const qs = new URLSearchParams({
-        query: JSON.stringify({ q }),
-        ...(aff ? { aff } : {}),
-      });
-
-      const kvUrl = `${kvEndpoint}?${qs.toString()}`;
-      const headers: Record<string, string> = {
-        "User-Agent": "AffiliateKVProxy/1.0",
-        Referer: baseUrl,
-        Origin: baseUrl,
-        ...(aff ? { "X-Affiliate-Id": aff } : {}),
-        Accept: "application/json",
+      errors.kv = `${r.status} ${kvUrl}`;
+      debug.kv = {
+        status: r.status,
+        kvUrl,
+        body: typeof data === "string" ? String(data).slice(0, 500) : data,
       };
-
-      const hit = async () => {
-        const r = await fetch(kvUrl, { cache: "no-store", headers });
-        const raw = await r.text();
-        let data: any = raw;
-        try { data = JSON.parse(raw); } catch {}
-        return { r, data };
-      };
-
-      let { r, data } = await hit();
-      if ((!r.ok || !Array.isArray((data as any)?.items)) && (r.status === 429 || r.status >= 500)) {
-        await new Promise(res => setTimeout(res, 600));
-        ({ r, data } = await hit());
-      }
-
-      if (r.ok && Array.isArray((data as any)?.items)) {
-        results.push(
-          ...(data as any).items.map((it: any) => ({
-            source: "Karaoke Version" as const,
-            artist: it.artist || "",
-            title: it.title || "",
-            brand: "Karaoke Version",
-            url: it.url,
-            imageUrl: it.imageUrl ?? null,
-          })),
-        );
-      } else {
-        errors.kv = `${r.status} ${kvUrl}`; // keep error as string
-        debug.kv = {
-          status: r.status,
-          kvUrl,
-          body: typeof data === "string" ? String(data).slice(0, 300) : data,
-        };
-      }
     }
-  } catch (e: any) {
-    errors.kv = e?.message || String(e);
-    debug.kv = { error: e?.message || String(e) };
   }
+} catch (e: any) {
+  errors.kv = e?.message || String(e);
+  debug.kv = { error: e?.message || String(e) };
+}
+
 
   // -------------------------
   // YouTube (App route proxy)

@@ -6,6 +6,8 @@ export type Affiliate = "Karaoke Version" | "Party Tyme";
 
 type RawRow = Record<string, any>;
 type UpsertResult = { added: number; updated: number; skipped: number };
+type UpsertOutcome = "added" | "updated" | "skipped";
+
 // ---- Party Tyme helpers ----
 const PT_MERCHANT = process.env.PARTYTYME_MERCHANT?.trim() || "105";
 
@@ -28,7 +30,7 @@ function extractPtTrackId(raw: Record<string, any>): string | null {
     "code", "Code", "productCode", "ProductCode",
     "sku", "SKU", "item", "Item", "itemNumber", "ItemNumber",
     "catalog", "Catalog", "catalogNumber", "CatalogNumber",
-    "number", "Number", "no", "No"
+    "number", "Number", "no", "No",
   ];
 
   const candidates: string[] = [];
@@ -51,8 +53,7 @@ function extractPtTrackId(raw: Record<string, any>): string | null {
 
 /** Build a Party Tyme product URL from raw data or a discovered trackId */
 function buildPartyTymeUrl(raw: Record<string, any>): string | null {
-  const direct =
-    raw.purchaseUrl || raw.productUrl || raw.link || raw.url || null;
+  const direct = raw.purchaseUrl || raw.productUrl || raw.link || raw.url || null;
   if (direct) return withMerchant(String(direct));
 
   const tid = extractPtTrackId(raw);
@@ -64,8 +65,10 @@ function buildPartyTymeUrl(raw: Record<string, any>): string | null {
 function normalizePtBrand(raw: Record<string, any>): string {
   const parts = [
     raw.Brand, raw.brand, raw.Label, raw.label, raw.Category, raw.category,
-    raw.Format, raw.format, raw.Description, raw.description
-  ].map(v => (typeof v === "string" ? v.toLowerCase() : "")).join(" ");
+    raw.Format, raw.format, raw.Description, raw.description,
+  ]
+    .map((v) => (typeof v === "string" ? v.toLowerCase() : ""))
+    .join(" ");
 
   const title = String(raw.Title ?? raw.title ?? "").toLowerCase();
 
@@ -77,7 +80,6 @@ function normalizePtBrand(raw: Record<string, any>): string {
 // Helpers
 // ---------------------------------------------------------
 
-/** Upsert a single track with consistent dedupe rules. */
 /** Safely coerce any value to a trimmed string or null */
 function toText(v: any): string | null {
   if (v == null) return null;
@@ -100,116 +102,70 @@ function toText(v: any): string | null {
 
 /**
  * Upsert a single track with dedupe rules:
- * - Prefer unique composite (source, trackId) when trackId is present.
- * - Fallback to (source + artist + title) when there's no trackId.
+ * - Use (source + artist + title) as the natural key (since Track has no trackId / composite unique).
+ * - If found, update; otherwise create.
+ * - Store purchaseUrl in BOTH `purchaseUrl` (new column) and `url` (for compatibility).
  */
-type UpsertOutcome = "added" | "updated" | "skipped";
-
-// Replace your entire upsertTrack with this version:
-
 export async function upsertTrack(input: {
-  source: string;                 // "Party Tyme" | "Karaoke Version"
-  artist?: any;                   // may come as number, we sanitize
-  title?: any;                    // may come as number, we sanitize
-  trackId?: any;                  // may come as number, we sanitize
-  brand?: any;                    // may come as number, we sanitize
-  purchaseUrl?: any;              // may come as non-string, we sanitize
+  source: string;          // "Party Tyme" | "Karaoke Version"
+  artist?: any;
+  title?: any;
+  trackId?: any;           // accepted but NOT stored (schema has no trackId); kept for parsing/building URLs only
+  brand?: any;
+  purchaseUrl?: any;
 }): Promise<UpsertOutcome> {
-  const asStr = (v: any): string | null => {
-    if (v === undefined || v === null) return null;
-    const s = String(v).trim();
-    return s.length ? s : null;
-  };
+  const source = toText(input.source) ?? "Unknown";
+  const artist = toText(input.artist);
+  const title = toText(input.title);
+  const brand = toText(input.brand);
+  const purchaseUrl = toText(input.purchaseUrl);
+  // input.trackId intentionally ignored in DB writes (no trackId column)
 
-  const source = asStr(input.source) ?? "Unknown";
-  const artist = asStr(input.artist);
-  const title = asStr(input.title);
-  const trackId = asStr(input.trackId);
-  const brand = asStr(input.brand);
-  const purchaseUrl = asStr(input.purchaseUrl);
-
-  // Skip unusable rows
   if (!artist || !title) return "skipped";
 
-  // If we have a trackId, prefer (source + trackId)
-  if (trackId) {
-    // Find any existing track with the same (source + artist + title)
-    const orphan = await prisma.track.findFirst({
-      where: { source, artist, title },
-      select: { id: true },
-    });
-    if (orphan) {
-      // (no trackId field on Track anymore; keep whatever you were doing here
-      // EXCEPT do not read/write trackId on Track)
-    }
-
-
-    // Normal upsert using (source + artist + title) match
-    const existing = await prisma.track.findFirst({
-      where: { source, artist, title },
-      select: { id: true },
-    });
-
-
-    await prisma.track.upsert({
-      where: { source_trackId: { source, trackId } },
-      create: {
-        source,
-        artist,
-        title,
-        trackId,
-        brand: brand ?? null,
-        purchaseUrl: purchaseUrl ?? null,
-      },
-      update: {
-        artist,
-        title,
-        brand: brand ?? null,
-        purchaseUrl: purchaseUrl ?? null,
-      },
-    });
-
-    return existing ? "updated" : "added";
-  }
-
-  // No trackId → fallback to (source + artist + title)
-  const existingByTitle = await prisma.track.findFirst({
+  const existing = await prisma.track.findFirst({
     where: { source, artist, title },
     select: { id: true },
   });
 
-  if (existingByTitle) {
-  await prisma.track.update({
-    where: { id: existingByTitle.id },
+  if (existing) {
+    await prisma.track.update({
+      where: { id: existing.id },
+      data: {
+        // keep keys stable (optionally re-set to normalize casing/spacing)
+        source,
+        artist,
+        title,
+        brand: brand ?? null,
+        // write to both fields for compatibility with existing UI
+        url: purchaseUrl ?? null,
+        purchaseUrl: purchaseUrl ?? null,
+        imageUrl: null,
+      },
+    });
+    return "updated";
+  }
+
+  await prisma.track.create({
     data: {
+      source,
+      artist,
+      title,
       brand: brand ?? null,
-      url: purchaseUrl ?? null, // map your variable to the existing 'url' column
+      url: purchaseUrl ?? null,
+      purchaseUrl: purchaseUrl ?? null,
+      imageUrl: null,
     },
   });
-  return "updated";
-}
-
-await prisma.track.create({
-  data: {
-    source,
-    artist,
-    title,
-    brand: brand ?? null,
-    url: purchaseUrl ?? null, // use 'url' (Track has no 'purchaseUrl' column)
-  },
-});
-
-
   return "added";
 }
-
-
 
 /** Normalize common CSV headers into our row shape. */
 function normalizeRowFromCsv(r: RawRow) {
   return {
-    artist: r["Artist"] ?? r["artist"] ?? r["ARTIST"],
-    title: r["Title"] ?? r["title"] ?? r["TITLE"],
+    artist: r["Artist"] ?? r["artist"] ?? r["ARTIST"] ?? null,
+    title: r["Title"] ?? r["title"] ?? r["TITLE"] ?? null,
+    // keep trackId in parsing (for URL building), but DO NOT store in DB
     trackId:
       r["TrackID"] ??
       r["trackId"] ??
@@ -233,20 +189,9 @@ function normalizeRowFromCsv(r: RawRow) {
 /** Normalize likely Party Tyme XML nodes into our row shape. */
 function normalizeRowFromXml(n: any) {
   return {
-    artist:
-      n?.artist ??
-      n?.Artist ??
-      n?.singer ??
-      n?.Singer ??
-      n?.ARTIST ??
-      null,
-    title:
-      n?.title ??
-      n?.Title ??
-      n?.song ??
-      n?.Song ??
-      n?.TITLE ??
-      null,
+    artist: n?.artist ?? n?.Artist ?? n?.singer ?? n?.Singer ?? n?.ARTIST ?? null,
+    title: n?.title ?? n?.Title ?? n?.song ?? n?.Song ?? n?.TITLE ?? null,
+    // keep for URL building only
     trackId: n?.trackId ?? n?.TrackID ?? n?.id ?? n?.ID ?? null,
     brand: "Party Tyme",
     purchaseUrl: n?.url ?? n?.URL ?? n?.link ?? null,
@@ -280,9 +225,7 @@ export async function importCsv(
 
   const rows = (parsed.data || []) as RawRow[];
 
-  let added = 0,
-    updated = 0,
-    skipped = 0;
+  let added = 0, updated = 0, skipped = 0;
 
   for (const raw of rows) {
     const row = normalizeRowFromCsv(raw);
@@ -290,10 +233,9 @@ export async function importCsv(
       source,
       artist: row.artist,
       title: row.title,
-      trackId: row.trackId ? String(row.trackId) : null,
+      trackId: row.trackId ? String(row.trackId) : null, // accepted but ignored by DB
       brand: normalizePtBrand(row),
-      purchaseUrl: buildPartyTymeUrl(row),
-
+      purchaseUrl: buildPartyTymeUrl(row) ?? row.purchaseUrl ?? null,
     });
     if (res === "added") added++;
     else if (res === "updated") updated++;
@@ -315,8 +257,7 @@ export async function importPartyTymeZip(
   zipUrl: string
 ): Promise<UpsertResult & { filesParsed: string[]; parsedRows: number }> {
   const resp = await fetch(zipUrl);
-  if (!resp.ok)
-    throw new Error(`Failed to download ZIP: ${resp.status} ${resp.statusText}`);
+  if (!resp.ok) throw new Error(`Failed to download ZIP: ${resp.status} ${resp.statusText}`);
 
   const buf = Buffer.from(await resp.arrayBuffer());
 
@@ -326,11 +267,7 @@ export async function importPartyTymeZip(
 
   const { XMLParser } = await import("fast-xml-parser");
 
-  let added = 0,
-    updated = 0,
-    skipped = 0,
-    parsedRows = 0;
-
+  let added = 0, updated = 0, skipped = 0, parsedRows = 0;
   const filesParsed: string[] = [];
 
   // --- parsers ---
@@ -409,14 +346,15 @@ export async function importPartyTymeZip(
     parsedRows += rows.length;
 
     for (const r of rows) {
+      // we still try to extract PT id for URL building
       const ptId = extractPtTrackId(r);
       const res = await upsertTrack({
         source: "Party Tyme",
         artist: r.artist ?? undefined,
         title: r.title ?? undefined,
-        trackId: ptId ?? null,
+        trackId: ptId ?? null, // accepted by upsertTrack but ignored for DB storage
         brand: normalizePtBrand(r),
-        purchaseUrl: buildPartyTymeUrl(r),
+        purchaseUrl: buildPartyTymeUrl(r) ?? r.purchaseUrl ?? null,
       });
       if (res === "added") added++;
       else if (res === "updated") updated++;
@@ -426,3 +364,4 @@ export async function importPartyTymeZip(
 
   return { added, updated, skipped, filesParsed, parsedRows };
 }
+
