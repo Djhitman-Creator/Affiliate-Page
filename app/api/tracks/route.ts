@@ -34,7 +34,11 @@ function partyTymeSearchUrl(artist?: string | null, title?: string | null): stri
   const t = (title || "").toString().trim();
   const q = [a, t].filter(Boolean).join(" ");
   if (!q) return null;
-  return withMerchant(`https://www.partytyme.net/songshop/search?q=${encodeURIComponent(q)}`);
+
+  // Party Tyme is an SPA; use hash routing to avoid IIS 404s
+  // Put merchant BEFORE the hash.
+  const base = "https://www.partytyme.net/songshop/";
+  return `${base}?merchant=${PT_MERCHANT}#/search?q=${encodeURIComponent(q)}`;
 }
 
 function sanitize(s: any): string {

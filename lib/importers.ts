@@ -68,13 +68,17 @@ function buildPartyTymeUrl(raw: Record<string, any>): string | null {
   if (direct) return withMerchant(String(direct));
 
   const tid = extractPtTrackId(raw);
-  if (tid) return withMerchant(`https://www.partytyme.net/songshop/cat/search/item/${tid}`);
+  if (tid) {
+    // Search by code in SPA to avoid 404 on direct path
+    const base = "https://www.partytyme.net/songshop/";
+    return `${base}?merchant=${PT_MERCHANT}#/search?q=${encodeURIComponent(tid)}`;
+  }
 
-  // Fallback: search link by artist + title so View/Buy is never empty
   const artist = (raw["Artist"] ?? raw["artist"] ?? raw["ARTIST"] ?? "").toString();
-  const title = (raw["Title"] ?? raw["title"] ?? raw["TITLE"] ?? "").toString();
+  const title  = (raw["Title"]  ?? raw["title"]  ?? raw["TITLE"]  ?? "").toString();
   return partyTymeSearchUrl(artist, title);
 }
+
 
 
 /** Safe brand detection for Party Tyme */
