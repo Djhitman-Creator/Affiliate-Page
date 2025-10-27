@@ -11,6 +11,16 @@ type UpsertOutcome = "added" | "updated" | "skipped";
 // ---- Party Tyme helpers ----
 const PT_MERCHANT = process.env.PARTYTYME_MERCHANT?.trim() || "105";
 
+function partyTymeSearchUrl(artist?: string | null, title?: string | null): string | null {
+  const a = (artist || "").toString().trim();
+  const t = (title || "").toString().trim();
+  const q = [a, t].filter(Boolean).join(" ");
+  if (!q) return null;
+  const base = `https://www.partytyme.net/songshop/search?q=${encodeURIComponent(q)}`;
+  return withMerchant(base);
+}
+
+
 function withMerchant(url: string | null | undefined): string | null {
   if (!url) return null;
   try {
@@ -53,13 +63,19 @@ function extractPtTrackId(raw: Record<string, any>): string | null {
 
 /** Build a Party Tyme product URL from raw data or a discovered trackId */
 function buildPartyTymeUrl(raw: Record<string, any>): string | null {
-  const direct = raw.purchaseUrl || raw.productUrl || raw.link || raw.url || null;
+  const direct =
+    raw.purchaseUrl || raw.productUrl || raw.link || raw.url || null;
   if (direct) return withMerchant(String(direct));
 
   const tid = extractPtTrackId(raw);
   if (tid) return withMerchant(`https://www.partytyme.net/songshop/cat/search/item/${tid}`);
-  return null;
+
+  // Fallback: search link by artist + title so View/Buy is never empty
+  const artist = (raw["Artist"] ?? raw["artist"] ?? raw["ARTIST"] ?? "").toString();
+  const title = (raw["Title"] ?? raw["title"] ?? raw["TITLE"] ?? "").toString();
+  return partyTymeSearchUrl(artist, title);
 }
+
 
 /** Safe brand detection for Party Tyme */
 function normalizePtBrand(raw: Record<string, any>): string {
@@ -107,13 +123,14 @@ function toText(v: any): string | null {
  * - Store purchaseUrl in BOTH `purchaseUrl` (new column) and `url` (for compatibility).
  */
 export async function upsertTrack(input: {
-  source: string;          // "Party Tyme" | "Karaoke Version"
+  source: string;          // "Party Tyme" | "Karaoke Version" | "YouTube"
   artist?: any;
   title?: any;
-  trackId?: any;           // SKU/code if present (e.g., PY22138)
+  trackId?: any;           // SKU / product code if present (e.g., PY22138)
   brand?: any;
-  purchaseUrl?: any;
+  purchaseUrl?: any;       // direct product URL if provided by source
 }): Promise<"added" | "updated" | "skipped"> {
+  // helper to coerce anything -> trimmed string or null
   const toText = (v: any): string | null => {
     if (v === undefined || v === null) return null;
     if (typeof v === "string") return v.trim() || null;
@@ -131,42 +148,50 @@ export async function upsertTrack(input: {
     return null;
   };
 
-  const source = toText(input.source) ?? "Unknown";
+  // 1) normalize fields FIRST
+  const source = toText(input.source) ?? "Party Tyme";
   const artist = toText(input.artist);
   const title = toText(input.title);
+  const trackId = toText(input.trackId);
   const brand = toText(input.brand);
   const purchaseUrl = toText(input.purchaseUrl);
-  const trackId = toText(input.trackId); // may be null/undefined
 
+  // 2) skip unusable rows
   if (!artist || !title) return "skipped";
 
-  // If we have a trackId, use (source + trackId) as the unique key (requires @@unique([source, trackId]))
+  // 3) pick the best possible link (direct purchase first, then search fallback)
+  // NOTE: partyTymeSearchUrl(...) must already exist in this file (we added it earlier).
+  const bestPurchase = purchaseUrl ?? null;
+  const bestSearch = partyTymeSearchUrl(artist, title);
+
+  // 4) prefer per-SKU upsert when we have a trackId (requires @@unique([source, trackId]) in schema)
   if (trackId) {
     await prisma.track.upsert({
-      where: { source_trackId: { source, trackId } }, // <-- requires the schema change above
+      where: { source_trackId: { source, trackId } },
       create: {
         source,
         artist,
         title,
         brand: brand ?? null,
         trackId,
-        url: purchaseUrl ?? null,
-        purchaseUrl: purchaseUrl ?? null,
+        url: bestPurchase ?? bestSearch ?? null,
+        purchaseUrl: bestPurchase ?? null,
         imageUrl: null,
       },
       update: {
         artist,
         title,
         brand: brand ?? null,
-        url: purchaseUrl ?? null,
-        purchaseUrl: purchaseUrl ?? null,
+        url: bestPurchase ?? bestSearch ?? null,
+        purchaseUrl: bestPurchase ?? null,
         imageUrl: null,
       },
     });
-    return "added"; // upsert did add-or-update; we treat success as “added” for simplicity
+    // treat upsert success as "added" for simplicity
+    return "added";
   }
 
-  // Fallback: no trackId — dedupe by (source + artist + title)
+  // 5) fallback: dedupe by (source + artist + title)
   const existing = await prisma.track.findFirst({
     where: { source, artist, title },
     select: { id: true },
@@ -180,8 +205,8 @@ export async function upsertTrack(input: {
         artist,
         title,
         brand: brand ?? null,
-        url: purchaseUrl ?? null,
-        purchaseUrl: purchaseUrl ?? null,
+        url: bestPurchase ?? bestSearch ?? null,
+        purchaseUrl: bestPurchase ?? null,
         imageUrl: null,
       },
     });
@@ -194,8 +219,8 @@ export async function upsertTrack(input: {
       artist,
       title,
       brand: brand ?? null,
-      url: purchaseUrl ?? null,
-      purchaseUrl: purchaseUrl ?? null,
+      url: bestPurchase ?? bestSearch ?? null,
+      purchaseUrl: bestPurchase ?? null,
       imageUrl: null,
     },
   });
