@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
-import { ensureSqliteTables } from "@/lib/ensureSchema"; // no-op on Postgres
+import { ensureSqliteTables } from "@/lib/ensureSchema";
 
 type TrackResult = {
   source: "Party Tyme" | "Karaoke Version" | "YouTube";
@@ -17,6 +17,26 @@ type TrackResult = {
 
 type Errors = Record<string, any>;
 
+const PT_MERCHANT = process.env.PARTYTYME_MERCHANT?.trim() || "105";
+function withMerchant(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(String(url));
+    if (!u.searchParams.has("merchant")) u.searchParams.set("merchant", PT_MERCHANT);
+    return u.toString();
+  } catch {
+    const s = String(url);
+    return s.includes("?") ? `${s}&merchant=${PT_MERCHANT}` : `${s}?merchant=${PT_MERCHANT}`;
+  }
+}
+function partyTymeSearchUrl(artist?: string | null, title?: string | null): string | null {
+  const a = (artist || "").toString().trim();
+  const t = (title || "").toString().trim();
+  const q = [a, t].filter(Boolean).join(" ");
+  if (!q) return null;
+  return withMerchant(`https://www.partytyme.net/songshop/search?q=${encodeURIComponent(q)}`);
+}
+
 function sanitize(s: any): string {
   return (s ?? "").toString().trim();
 }
@@ -27,22 +47,18 @@ export async function GET(req: Request) {
   const rawQ = sanitize(url.searchParams.get("q"));
   if (!rawQ) return NextResponse.json({ items: [], total: 0 });
 
-  // SQLite safety (no-op for Postgres)
-  await ensureSqliteTables();
+  await ensureSqliteTables(); // no-op on Postgres
 
   const results: TrackResult[] = [];
   const errors: Errors = {};
   const debug: Record<string, any> = {};
 
-  // -------------------------
-  // Build smart WHERE for Party Tyme / DB search
-  // -------------------------
+  // ------------ smart WHERE ------------
   const q = rawQ;
-  const cut = q.match(/^\s*(.+?)\s*[-–—|]\s*(.+)\s*$/); // artist-title separators
+  const cut = q.match(/^\s*(.+?)\s*[-–—|]\s*(.+)\s*$/);
   const artistPart = cut?.[1]?.trim();
   const titlePart = cut?.[2]?.trim();
 
-  // Token AND logic across artist/title (e.g., "george amarillo")
   const tokens = q.split(/\s+/).filter(Boolean);
   const tokenAND =
     tokens.length > 1
@@ -54,10 +70,8 @@ export async function GET(req: Request) {
         }))
       : [];
 
-  // Final WHERE
   const where = {
     OR: [
-      // Exact split form: Artist - Title
       ...(artistPart && titlePart
         ? [
             {
@@ -68,11 +82,7 @@ export async function GET(req: Request) {
             },
           ]
         : []),
-
-      // Tokens across artist/title (AND of token presence)
       ...(tokenAND.length ? [{ AND: tokenAND }] : []),
-
-      // Simple fallback: substring in either field
       {
         OR: [
           { artist: { contains: q, mode: "insensitive" as const } },
@@ -82,9 +92,7 @@ export async function GET(req: Request) {
     ],
   };
 
-  // -------------------------
-  // Party Tyme results (any provider)
-  // -------------------------
+  // ------------ Party Tyme ------------
   try {
     const pt = await prisma.track.findMany({
       where,
@@ -103,7 +111,6 @@ export async function GET(req: Request) {
 
     results.push(
       ...pt.map((r) => {
-        // Coerce to the literal union TypeScript expects
         const src: "Party Tyme" | "Karaoke Version" | "YouTube" =
           r.source === "Karaoke Version"
             ? "Karaoke Version"
@@ -111,13 +118,18 @@ export async function GET(req: Request) {
             ? "YouTube"
             : "Party Tyme";
 
+        // Fallback: if no purchaseUrl/url in DB, generate a Party Tyme search link on the fly
+        const bestUrl =
+          (r as any).purchaseUrl ??
+          r.url ??
+          (src === "Party Tyme" ? partyTymeSearchUrl(r.artist, r.title) ?? undefined : undefined);
+
         return {
           source: src,
           artist: r.artist || "",
           title: r.title || "",
           brand: r.brand || "Party Tyme",
-          // Prefer purchaseUrl; fallback to url
-          url: (r as any).purchaseUrl ?? r.url ?? undefined,
+          url: bestUrl,
           imageUrl: r.imageUrl ?? null,
         } satisfies TrackResult;
       })
@@ -126,9 +138,7 @@ export async function GET(req: Request) {
     errors.partytyme = e?.message || String(e);
   }
 
-  // -------------------------
-  // Karaoke Version (KV) — feature-flag guarded, JSON query per KV support
-  // -------------------------
+  // ------------ Karaoke Version ------------
   try {
     const kvDisabled = String(process.env.KV_DISABLED || "").toLowerCase() === "true";
     if (kvDisabled) {
@@ -139,12 +149,7 @@ export async function GET(req: Request) {
         "https://www.karaoke-version.com/api/search";
       const affiliateId = (process.env.KV_AFFILIATE_ID || "").trim() || "1048";
 
-      // KV expects a single 'query=' param containing JSON
-      const kvPayload = {
-        affiliateId,
-        function: "search",
-        parameters: { query: q },
-      };
+      const kvPayload = { affiliateId, function: "search", parameters: { query: q } };
       const qs = new URLSearchParams({ query: JSON.stringify(kvPayload) });
       const kvUrl = `${kvEndpoint}/?${qs.toString()}`;
 
@@ -175,13 +180,9 @@ export async function GET(req: Request) {
     errors.kv = e?.message || String(e);
   }
 
-  // -------------------------
-  // YouTube (App route proxy)
-  // -------------------------
+  // ------------ YouTube ------------
   try {
-    const ytRes = await fetch(`${baseUrl}/api/youtube?q=${encodeURIComponent(q)}`, {
-      cache: "no-store",
-    });
+    const ytRes = await fetch(`${baseUrl}/api/youtube?q=${encodeURIComponent(q)}`, { cache: "no-store" });
     const ytData = await ytRes.json();
     if (Array.isArray(ytData?.items)) {
       results.push(
