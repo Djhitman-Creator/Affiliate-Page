@@ -37,13 +37,6 @@ export async function GET(req: Request) {
   // -------------------------
   // Build smart WHERE for Party Tyme / DB search
   // -------------------------
-  // Supports:
-  //   "Artist - Title"
-  //   "Artist – Title" (en dash)
-  //   "Artist — Title" (em dash)
-  //   "Artist | Title"
-  //   "Artist Title" (tokens across both fields)
-  //   plain substring in either artist or title
   const q = rawQ;
   const cut = q.match(/^\s*(.+?)\s*[-–—|]\s*(.+)\s*$/); // artist-title separators
   const artistPart = cut?.[1]?.trim();
@@ -51,14 +44,15 @@ export async function GET(req: Request) {
 
   // Token AND logic across artist/title (e.g., "george amarillo")
   const tokens = q.split(/\s+/).filter(Boolean);
-  const tokenAND = tokens.length > 1
-    ? tokens.map((t) => ({
-        OR: [
-          { artist: { contains: t, mode: "insensitive" as const } },
-          { title: { contains: t, mode: "insensitive" as const } },
-        ],
-      }))
-    : [];
+  const tokenAND =
+    tokens.length > 1
+      ? tokens.map((t) => ({
+          OR: [
+            { artist: { contains: t, mode: "insensitive" as const } },
+            { title: { contains: t, mode: "insensitive" as const } },
+          ],
+        }))
+      : [];
 
   // Final WHERE
   const where = {
@@ -94,30 +88,39 @@ export async function GET(req: Request) {
   try {
     const pt = await prisma.track.findMany({
       where,
-      orderBy: [{ id: "desc" }], // newer imports first
+      orderBy: [{ id: "desc" }],
       take: 50,
       select: {
         artist: true,
         title: true,
         brand: true,
         imageUrl: true,
-        // prefer purchaseUrl if present; also return url
-        purchaseUrl: true as any,
+        purchaseUrl: true,
         url: true,
         source: true,
-      } as any,
+      },
     });
 
     results.push(
-      ...pt.map((r: any) => ({
-        source: (r.source as string) || ("Party Tyme" as const),
-        artist: r.artist || "",
-        title: r.title || "",
-        brand: r.brand || "Party Tyme",
-        // Make View/Buy link show: prefer purchaseUrl, fallback to url
-        url: r.purchaseUrl ?? r.url ?? undefined,
-        imageUrl: r.imageUrl ?? null,
-      }))
+      ...pt.map((r) => {
+        // Coerce to the literal union TypeScript expects
+        const src: "Party Tyme" | "Karaoke Version" | "YouTube" =
+          r.source === "Karaoke Version"
+            ? "Karaoke Version"
+            : r.source === "YouTube"
+            ? "YouTube"
+            : "Party Tyme";
+
+        return {
+          source: src,
+          artist: r.artist || "",
+          title: r.title || "",
+          brand: r.brand || "Party Tyme",
+          // Prefer purchaseUrl; fallback to url
+          url: (r as any).purchaseUrl ?? r.url ?? undefined,
+          imageUrl: r.imageUrl ?? null,
+        } satisfies TrackResult;
+      })
     );
   } catch (e: any) {
     errors.partytyme = e?.message || String(e);
@@ -131,15 +134,12 @@ export async function GET(req: Request) {
     if (kvDisabled) {
       errors.kv = "disabled by KV_DISABLED env";
     } else {
-      const kvEndpoint = (process.env.KV_SEARCH_ENDPOINT || "").replace(/\/+$/, "") || "https://www.karaoke-version.com/api/search";
+      const kvEndpoint =
+        (process.env.KV_SEARCH_ENDPOINT || "").replace(/\/+$/, "") ||
+        "https://www.karaoke-version.com/api/search";
       const affiliateId = (process.env.KV_AFFILIATE_ID || "").trim() || "1048";
 
-      // KV expects a single 'query=' param containing JSON:
-      // {
-      //   "affiliateId": 1048,
-      //   "function": "search",
-      //   "parameters": { "query": "George Strait" }
-      // }
+      // KV expects a single 'query=' param containing JSON
       const kvPayload = {
         affiliateId,
         function: "search",
@@ -162,13 +162,13 @@ export async function GET(req: Request) {
             artist: it.artist || "",
             title: it.title || "",
             brand: "Karaoke Version",
-            url: it.url, // KV provides a product URL
+            url: it.url,
             imageUrl: it.imageUrl ?? null,
           }))
         );
       } else {
         errors.kv = `KV ${r.status}`;
-        debug.kv = { kvUrl, body: typeof data === "string" ? data.slice(0, 300) : data };
+        debug.kv = { kvUrl, body: typeof data === "string" ? String(data).slice(0, 300) : data };
       }
     }
   } catch (e: any) {
@@ -179,7 +179,9 @@ export async function GET(req: Request) {
   // YouTube (App route proxy)
   // -------------------------
   try {
-    const ytRes = await fetch(`${baseUrl}/api/youtube?q=${encodeURIComponent(q)}`, { cache: "no-store" });
+    const ytRes = await fetch(`${baseUrl}/api/youtube?q=${encodeURIComponent(q)}`, {
+      cache: "no-store",
+    });
     const ytData = await ytRes.json();
     if (Array.isArray(ytData?.items)) {
       results.push(
@@ -200,5 +202,11 @@ export async function GET(req: Request) {
     errors.youtube = e?.message || String(e);
   }
 
-  return NextResponse.json({ items: results, total: results.length, errors, debug, parsed: { q, artistPart, titlePart, tokens } });
+  return NextResponse.json({
+    items: results,
+    total: results.length,
+    errors,
+    debug,
+    parsed: { q, artistPart, titlePart, tokens },
+  });
 }
