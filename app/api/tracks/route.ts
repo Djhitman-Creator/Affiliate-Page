@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
-import { ensureSqliteTables } from "@/lib/ensureSchema";
+import { ensureSqliteTables } from "@/lib/ensureSchema"; // no-op on Postgres
 
 type TrackResult = {
   source: "Party Tyme" | "Karaoke Version" | "YouTube";
@@ -17,13 +17,17 @@ type TrackResult = {
 
 type Errors = Record<string, any>;
 
+function sanitize(s: any): string {
+  return (s ?? "").toString().trim();
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const baseUrl = `${url.protocol}//${url.host}`;
-  const q = (url.searchParams.get("q") || "").trim();
-  if (!q) return NextResponse.json({ items: [], total: 0 });
+  const rawQ = sanitize(url.searchParams.get("q"));
+  if (!rawQ) return NextResponse.json({ items: [], total: 0 });
 
-  // No-op on Postgres; harmless to keep
+  // SQLite safety (no-op for Postgres)
   await ensureSqliteTables();
 
   const results: TrackResult[] = [];
@@ -31,89 +35,145 @@ export async function GET(req: Request) {
   const debug: Record<string, any> = {};
 
   // -------------------------
-  // Party Tyme (Prisma on any provider)
+  // Build smart WHERE for Party Tyme / DB search
+  // -------------------------
+  // Supports:
+  //   "Artist - Title"
+  //   "Artist – Title" (en dash)
+  //   "Artist — Title" (em dash)
+  //   "Artist | Title"
+  //   "Artist Title" (tokens across both fields)
+  //   plain substring in either artist or title
+  const q = rawQ;
+  const cut = q.match(/^\s*(.+?)\s*[-–—|]\s*(.+)\s*$/); // artist-title separators
+  const artistPart = cut?.[1]?.trim();
+  const titlePart = cut?.[2]?.trim();
+
+  // Token AND logic across artist/title (e.g., "george amarillo")
+  const tokens = q.split(/\s+/).filter(Boolean);
+  const tokenAND = tokens.length > 1
+    ? tokens.map((t) => ({
+        OR: [
+          { artist: { contains: t, mode: "insensitive" as const } },
+          { title: { contains: t, mode: "insensitive" as const } },
+        ],
+      }))
+    : [];
+
+  // Final WHERE
+  const where = {
+    OR: [
+      // Exact split form: Artist - Title
+      ...(artistPart && titlePart
+        ? [
+            {
+              AND: [
+                { artist: { contains: artistPart, mode: "insensitive" as const } },
+                { title: { contains: titlePart, mode: "insensitive" as const } },
+              ],
+            },
+          ]
+        : []),
+
+      // Tokens across artist/title (AND of token presence)
+      ...(tokenAND.length ? [{ AND: tokenAND }] : []),
+
+      // Simple fallback: substring in either field
+      {
+        OR: [
+          { artist: { contains: q, mode: "insensitive" as const } },
+          { title: { contains: q, mode: "insensitive" as const } },
+        ],
+      },
+    ],
+  };
+
+  // -------------------------
+  // Party Tyme results (any provider)
   // -------------------------
   try {
     const pt = await prisma.track.findMany({
-      where: {
-        OR: [
-          { artist: { contains: q } },
-          { title:  { contains: q } },
-        ],
-      },
+      where,
+      orderBy: [{ id: "desc" }], // newer imports first
       take: 50,
+      select: {
+        artist: true,
+        title: true,
+        brand: true,
+        imageUrl: true,
+        // prefer purchaseUrl if present; also return url
+        purchaseUrl: true as any,
+        url: true,
+        source: true,
+      } as any,
     });
 
     results.push(
       ...pt.map((r: any) => ({
-        source: "Party Tyme" as const,
+        source: (r.source as string) || ("Party Tyme" as const),
         artist: r.artist || "",
         title: r.title || "",
         brand: r.brand || "Party Tyme",
-        url: r.url || undefined,
-        imageUrl: (r as any).imageUrl ?? null,
-      })),
+        // Make View/Buy link show: prefer purchaseUrl, fallback to url
+        url: r.purchaseUrl ?? r.url ?? undefined,
+        imageUrl: r.imageUrl ?? null,
+      }))
     );
   } catch (e: any) {
     errors.partytyme = e?.message || String(e);
   }
 
   // -------------------------
-// Karaoke Version (KV) — JSON payload via ?query=... (no special headers)
-// Docs: https://affiliate.recisio.com/karaoke-version/webservice.html
-// -------------------------
-try {
-  const kvDisabled = String(process.env.KV_DISABLED || "").toLowerCase() === "true";
-  if (kvDisabled) {
-    errors.kv = "disabled by KV_DISABLED env";
-  } else {
-    const kvEndpointRaw = (process.env.KV_SEARCH_ENDPOINT || "").trim();
-    const kvEndpoint = kvEndpointRaw || "https://www.karaoke-version.com/api/search/";
-    const affiliateId = Number(process.env.KV_AFFILIATE_ID || "1048");
-
-    // Build the JSON payload they require, then URL-encode it into ?query=
-    const payload = {
-      affiliateId,
-      function: "search",
-      parameters: { query: q },
-    };
-    const qs = new URLSearchParams({ query: JSON.stringify(payload) });
-    const kvUrl = `${kvEndpoint.replace(/\/+$/, "/")}?${qs.toString()}`;
-
-    // No special headers needed per KV support
-    const r = await fetch(kvUrl, { cache: "no-store" });
-    const raw = await r.text();
-    let data: any = raw;
-    try { data = JSON.parse(raw); } catch {}
-
-    // Accept either an array or { items: [...] }
-    const arr = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : null;
-
-    if (r.ok && Array.isArray(arr)) {
-      results.push(
-        ...arr.map((it: any) => ({
-          source: "Karaoke Version" as const,
-          artist: it.artist || it.singer || "",
-          title: it.title || it.name || "",
-          brand: "Karaoke Version",
-          url: it.url || it.link || undefined,
-          imageUrl: it.imageUrl || it.image || it.cover || null,
-        })),
-      );
+  // Karaoke Version (KV) — feature-flag guarded, JSON query per KV support
+  // -------------------------
+  try {
+    const kvDisabled = String(process.env.KV_DISABLED || "").toLowerCase() === "true";
+    if (kvDisabled) {
+      errors.kv = "disabled by KV_DISABLED env";
     } else {
-      errors.kv = `${r.status} ${kvUrl}`;
-      debug.kv = {
-        status: r.status,
-        kvUrl,
-        body: typeof data === "string" ? String(data).slice(0, 500) : data,
-      };
-    }
-  }
-} catch (e: any) {
-  errors.kv = e?.message || String(e);
-  debug.kv = { error: e?.message || String(e) };
-}
+      const kvEndpoint = (process.env.KV_SEARCH_ENDPOINT || "").replace(/\/+$/, "") || "https://www.karaoke-version.com/api/search";
+      const affiliateId = (process.env.KV_AFFILIATE_ID || "").trim() || "1048";
 
+      // KV expects a single 'query=' param containing JSON:
+      // {
+      //   "affiliateId": 1048,
+      //   "function": "search",
+      //   "parameters": { "query": "George Strait" }
+      // }
+      const kvPayload = {
+        affiliateId,
+        function: "search",
+        parameters: { query: q },
+      };
+      const qs = new URLSearchParams({ query: JSON.stringify(kvPayload) });
+      const kvUrl = `${kvEndpoint}/?${qs.toString()}`;
+
+      const r = await fetch(kvUrl, { cache: "no-store" });
+      const raw = await r.text();
+      let data: any = raw;
+      try {
+        data = JSON.parse(raw);
+      } catch {}
+
+      if (r.ok && Array.isArray((data as any)?.items)) {
+        results.push(
+          ...(data as any).items.map((it: any) => ({
+            source: "Karaoke Version" as const,
+            artist: it.artist || "",
+            title: it.title || "",
+            brand: "Karaoke Version",
+            url: it.url, // KV provides a product URL
+            imageUrl: it.imageUrl ?? null,
+          }))
+        );
+      } else {
+        errors.kv = `KV ${r.status}`;
+        debug.kv = { kvUrl, body: typeof data === "string" ? data.slice(0, 300) : data };
+      }
+    }
+  } catch (e: any) {
+    errors.kv = e?.message || String(e);
+  }
 
   // -------------------------
   // YouTube (App route proxy)
@@ -130,7 +190,7 @@ try {
           brand: it.brand || "YouTube",
           url: it.url,
           thumbnail: it.thumbnail ?? null,
-        })),
+        }))
       );
     } else {
       errors.youtube = "YouTube returned no array";
@@ -140,5 +200,5 @@ try {
     errors.youtube = e?.message || String(e);
   }
 
-  return NextResponse.json({ items: results, total: results.length, errors, debug });
+  return NextResponse.json({ items: results, total: results.length, errors, debug, parsed: { q, artistPart, titlePart, tokens } });
 }
