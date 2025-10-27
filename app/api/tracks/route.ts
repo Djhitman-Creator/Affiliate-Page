@@ -38,7 +38,7 @@ function partyTymeSearchUrl(artist?: string | null, title?: string | null): stri
   // Party Tyme is an SPA; use hash routing to avoid IIS 404s
   // Put merchant BEFORE the hash.
   const base = "https://www.partytyme.net/songshop/";
-  return `${base}?merchant=${PT_MERCHANT}#/search?q=${encodeURIComponent(q)}`;
+  return `${base}?merchant=${PT_MERCHANT}#/search/${encodeURIComponent(q)}`;
 }
 
 function sanitize(s: any): string {
