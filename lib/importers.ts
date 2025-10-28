@@ -16,8 +16,9 @@ function partyTymeSearchUrl(artist?: string | null, title?: string | null): stri
   const t = (title || "").toString().trim();
   const q = [a, t].filter(Boolean).join(" ");
   if (!q) return null;
-  const base = `https://www.partytyme.net/songshop/search?q=${encodeURIComponent(q)}`;
-  return withMerchant(base);
+  const base = "https://www.partytyme.net/songshop/";
+  // Use SPA hash routing to avoid 404s
+  return `${base}?merchant=${PT_MERCHANT}#/search/${encodeURIComponent(q)}`;
 }
 
 
@@ -71,7 +72,7 @@ function buildPartyTymeUrl(raw: Record<string, any>): string | null {
   if (tid) {
     // Search by code in SPA to avoid 404 on direct path
     const base = "https://www.partytyme.net/songshop/";
-    return `${base}?merchant=${PT_MERCHANT}#/search?q=${encodeURIComponent(tid)}`;
+    return `${base}?merchant=${PT_MERCHANT}#/search/${encodeURIComponent(tid)}`;
   }
 
   const artist = (raw["Artist"] ?? raw["artist"] ?? raw["ARTIST"] ?? "").toString();
