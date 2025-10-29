@@ -92,6 +92,12 @@ function buildPartyTymeUrl(raw: Record<string, any>): string | null {
 
 /** Safe brand detection for Party Tyme */
 function normalizePtBrand(raw: Record<string, any>): string {
+  // First check disc ID prefix
+  const trackId = extractPtTrackId(raw);
+  if (trackId && trackId.startsWith("PH")) return "Party Tyme HD";
+  if (trackId && trackId.startsWith("PY")) return "Party Tyme Karaoke";
+  
+  // Then check other fields
   const parts = [
     raw.Brand, raw.brand, raw.Label, raw.label, raw.Category, raw.category,
     raw.Format, raw.format, raw.Description, raw.description,
@@ -173,40 +179,60 @@ export async function upsertTrack(input: {
   if (!artist || !title) return "skipped";
 
   // 3) pick the best possible link (direct purchase first, then search fallback)
-  // NOTE: partyTymeSearchUrl(...) must already exist in this file (we added it earlier).
   const bestPurchase = purchaseUrl ?? null;
   const bestSearch = partyTymeSearchUrl(artist, title);
 
-  // 4) prefer per-SKU upsert when we have a trackId (requires @@unique([source, trackId]) in schema)
-  if (trackId) {
-    await prisma.track.upsert({
-      where: { source_trackId: { source, trackId } },
-      create: {
-        source,
-        artist,
-        title,
-        brand: brand ?? null,
+  // 4) For Party Tyme tracks with trackId, we want to keep HD and Regular separate
+  // So we include brand in our uniqueness check
+  if (trackId && source === "Party Tyme") {
+    // Check if this exact track (with same brand) already exists
+    const existing = await prisma.track.findFirst({
+      where: { 
+        source, 
         trackId,
-        url: bestPurchase ?? bestSearch ?? null,
-        purchaseUrl: bestPurchase ?? null,
-        imageUrl: null,
+        brand: brand ?? null  // Include brand to keep HD/Regular separate
       },
-      update: {
-        artist,
-        title,
-        brand: brand ?? null,
-        url: bestPurchase ?? bestSearch ?? null,
-        purchaseUrl: bestPurchase ?? null,
-        imageUrl: null,
-      },
+      select: { id: true },
     });
-    // treat upsert success as "added" for simplicity
-    return "added";
+
+    if (existing) {
+      await prisma.track.update({
+        where: { id: existing.id },
+        data: {
+          artist,
+          title,
+          brand: brand ?? null,
+          url: bestPurchase ?? bestSearch ?? null,
+          purchaseUrl: bestPurchase ?? null,
+          imageUrl: null,
+        },
+      });
+      return "updated";
+    } else {
+      await prisma.track.create({
+        data: {
+          source,
+          artist,
+          title,
+          brand: brand ?? null,
+          trackId,
+          url: bestPurchase ?? bestSearch ?? null,
+          purchaseUrl: bestPurchase ?? null,
+          imageUrl: null,
+        },
+      });
+      return "added";
+    }
   }
 
-  // 5) fallback: dedupe by (source + artist + title)
+  // 5) fallback: dedupe by (source + artist + title + brand) to keep versions separate
   const existing = await prisma.track.findFirst({
-    where: { source, artist, title },
+    where: { 
+      source, 
+      artist, 
+      title,
+      brand: brand ?? null  // IMPORTANT: Include brand to keep HD/Regular separate
+    },
     select: { id: true },
   });
 
@@ -232,6 +258,7 @@ export async function upsertTrack(input: {
       artist,
       title,
       brand: brand ?? null,
+      trackId: trackId ?? null,
       url: bestPurchase ?? bestSearch ?? null,
       purchaseUrl: bestPurchase ?? null,
       imageUrl: null,
