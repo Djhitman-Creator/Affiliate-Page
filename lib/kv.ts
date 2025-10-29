@@ -69,10 +69,10 @@ async function kvListArtists(ids: number[]): Promise<KVArtist[]> {
 export async function kvSearchSongs(q: string, limit = 25, offset = 0): Promise<UnifiedKVItem[]> {
   if (!q) return [];
 
-  // Build JSON body for KV search
+  // Build JSON body for KV search - affiliateId MUST be a number
   const body = {
-    affiliateId: KV_AFFILIATE_ID,
-    function: "search",  // Changed from "song" to "search"
+    affiliateId: KV_AFFILIATE_ID,  // This is already converted to number at top of file
+    function: "song",  // Correct: "song" for search endpoint
     parameters: {
       query: q,
       limit,
@@ -83,12 +83,18 @@ export async function kvSearchSongs(q: string, limit = 25, offset = 0): Promise<
   const query = encodeURIComponent(JSON.stringify(body));
   const url = `${KV_BASE}/search/?query=${query}`;
 
-  const res = await fetch(url, { next: { revalidate: 60 } });
-  if (!res.ok) throw new Error(`KV search ${res.status}`);
-  const data: any = await res.json();
+  console.log("KV Request URL:", url);  // Debug logging
+  console.log("KV Request Body:", body);  // Debug logging
 
-  // Debug log (optional)
-  // console.log("KV raw response:", JSON.stringify(data, null, 2));
+  const res = await fetch(url, { next: { revalidate: 60 } });
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("KV Error Response:", errorText);
+    throw new Error(`KV search ${res.status}: ${errorText}`);
+  }
+  
+  const data: any = await res.json();
+  console.log("KV Success Response:", JSON.stringify(data, null, 2));  // Debug logging
 
   const songs: KVSong[] = Array.isArray(data.songs) ? data.songs : [];
   if (!songs.length) return [];
@@ -100,7 +106,7 @@ export async function kvSearchSongs(q: string, limit = 25, offset = 0): Promise<
 
   // Map into unified items
   return songs.map<UnifiedKVItem>((s) => {
-    const artist = byId.get(s.artistId) || q; // fallback to query string if not resolved
+    const artist = byId.get(s.artistId) || q;
     const title = s.name || "";
     return {
       source: "Karaoke Version",
@@ -110,6 +116,7 @@ export async function kvSearchSongs(q: string, limit = 25, offset = 0): Promise<
       brand: "Karaoke Version",
       purchaseUrl: (() => {
         let fixedUrl = s.url || kvAffLink(artist, title);
+        // Fix the URL to use /karaoke/ instead of /mp3-backingtrack/
         if (fixedUrl.includes("/mp3-backingtrack/")) {
           fixedUrl = fixedUrl.replace("/mp3-backingtrack/", "/karaoke/");
         }
