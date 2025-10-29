@@ -7,6 +7,7 @@ import prisma from "@/lib/db";
 import { ensureSqliteTables } from "@/lib/ensureSchema";
 import AdmZip from "adm-zip";
 import { XMLParser } from "fast-xml-parser";
+import { upsertTrack } from "@/lib/importers";
 
 // ---------- helpers ----------
 const norm = (s: any) => String(s ?? "").trim().replace(/\s+/g, " ");
@@ -16,17 +17,9 @@ const pick = (row: Record<string, any>, names: string[]) => {
   }
   return "";
 };
-const withMerchant = (url: string | null | undefined, merchant: string) => {
-  if (!url) return null;
-  try {
-    const u = new URL(String(url));
-    if (!u.searchParams.has("merchant")) u.searchParams.set("merchant", merchant);
-    return u.toString();
-  } catch {
-    const s = String(url);
-    return s.includes("?") ? `${s}&merchant=${merchant}` : `${s}?merchant=${merchant}`;
-  }
-};
+
+const PT_MERCHANT = process.env.PARTYTYME_MERCHANT?.trim() || "105";
+
 const authorized = (req: Request) => {
   const need = (process.env.PT_IMPORT_SECRET || "").trim();
   if (!need) return true;
@@ -34,6 +27,54 @@ const authorized = (req: Request) => {
   const got = u.searchParams.get("secret") || req.headers.get("x-pt-secret") || "";
   return need && got === need;
 };
+
+// Extract disc ID from various possible fields
+function extractDiscId(row: Record<string, any>): string | null {
+  const discIdKeys = [
+    "DiscID", "discId", "discid", "disc_id",
+    "TrackID", "trackId", "trackid", "track_id",
+    "ProductCode", "productCode", "product_code",
+    "SKU", "sku", "Sku",
+    "ItemNumber", "itemNumber", "item_number",
+    "Code", "code"
+  ];
+  
+  for (const key of discIdKeys) {
+    const value = row[key];
+    if (value && /^P[HY]\d+$/i.test(String(value))) {
+      return String(value).toUpperCase();
+    }
+  }
+  
+  // Check in all string values for PH/PY pattern
+  for (const value of Object.values(row)) {
+    if (typeof value === 'string') {
+      const match = value.match(/\bP[HY]\d{3,6}\b/i);
+      if (match) return match[0].toUpperCase();
+    }
+  }
+  
+  return null;
+}
+
+// Determine brand based on disc ID
+function getBrandFromDiscId(discId: string | null): string {
+  if (!discId) return "Party Tyme";
+  if (discId.startsWith("PH")) return "Party Tyme HD";
+  if (discId.startsWith("PY")) return "Party Tyme Karaoke";
+  return "Party Tyme";
+}
+
+// Build proper Party Tyme URL
+function buildPartyTymeUrl(discId: string | null, artist: string, title: string): string {
+  if (discId && /^P[HY]\d+$/i.test(discId)) {
+    // Direct product URL using disc ID
+    return `https://www.partytyme.net/songshop/cat/search/item/${discId.toUpperCase()}?merchant=${PT_MERCHANT}`;
+  }
+  // Fallback to search URL
+  const q = [artist, title].filter(Boolean).join(" ");
+  return `https://www.partytyme.net/songshop/?merchant=${PT_MERCHANT}#/search/${encodeURIComponent(q)}`;
+}
 
 // Normalize rows from CSV or XML
 type RawRow = { Artist?: string; Title?: string; URL?: string; [k: string]: any };
@@ -46,21 +87,16 @@ const ARTIST_KEYS = [
 const TITLE_KEYS = [
   "Title","title","Song","song","SongTitle","songTitle","Track","track","Name","name"
 ];
-const URL_KEYS = [
-  "URL","Url","url","Link","link","PurchaseURL","purchaseUrl","Mp3Link","mp3Link","href","src"
-];
 
-/** returns first non-empty string field from a set of keys (checks object values and attributes) */
+/** returns first non-empty string field from a set of keys */
 function getField(obj: any, keys: string[]): string {
   for (const k of keys) {
     if (obj && typeof obj === "object") {
       if (obj[k] != null && String(obj[k]).trim() !== "") return String(obj[k]).trim();
-      // some XML parsers place values under attributes or nested objects
       if (obj?.attributes && obj.attributes[k] != null) {
         const v = String(obj.attributes[k]).trim();
         if (v) return v;
       }
-      // sometimes values are like { k: { "#text": "..." } }
       if (obj[k] && typeof obj[k] === "object" && obj[k]["#text"]) {
         const v = String(obj[k]["#text"]).trim();
         if (v) return v;
@@ -100,16 +136,16 @@ function extractRowsFromXml(xml: any, info: Record<string, any>): RawRow[] {
 
     recordShape(node);
 
-    // If it already looks like a song, extract it
+    // If it looks like a song, extract ALL fields (including disc ID)
     if (looksLikeSong(node)) {
       const Artist = getField(node, ARTIST_KEYS);
-      const Title  = getField(node, TITLE_KEYS);
-      const URL    = getField(node, URL_KEYS);
-      rows.push({ Artist, Title, URL });
+      const Title = getField(node, TITLE_KEYS);
+      // Include the entire node so we can extract disc ID
+      rows.push({ Artist, Title, ...node });
       // don't return; siblings may also contain nested additional data
     }
 
-    // Otherwise, keep drilling down into child objects/arrays
+    // Keep drilling down
     for (const k of Object.keys(node)) {
       const v = (node as any)[k];
       if (v && (typeof v === "object" || Array.isArray(v))) visit(v);
@@ -118,7 +154,6 @@ function extractRowsFromXml(xml: any, info: Record<string, any>): RawRow[] {
 
   visit(xml);
 
-  // expose top shapes to debug
   info.xmlShapes = Array.from(seenShapes.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
@@ -128,7 +163,7 @@ function extractRowsFromXml(xml: any, info: Record<string, any>): RawRow[] {
   return rows;
 }
 
-// Try CSV first; if empty/not-OK, try ZIP (CSV inside) else ZIP (XML inside).
+// Fetch Party Tyme catalog
 async function fetchPartyTymeRows(
   baseUrlCsv?: string,
   baseUrlZip?: string,
@@ -191,7 +226,7 @@ async function fetchPartyTymeRows(
       if (rows.length > 0) return { rows, info };
     }
 
-    // 2b) Otherwise XML inside ZIP (flexible parser)
+    // 2b) Otherwise XML inside ZIP
     const xmlEntry = entries.find((e: any) => /\.xml$/i.test(e.entryName));
     if (xmlEntry) {
       const xmlText = xmlEntry.getData().toString("utf8");
@@ -200,7 +235,6 @@ async function fetchPartyTymeRows(
         ignoreAttributes: false,
         attributeNamePrefix: "",
         textNodeName: "#text",
-        // preserve order not required; we recurse anyway
       });
       const xml: any = parser.parse(xmlText);
       const rows = extractRowsFromXml(xml, info);
@@ -233,7 +267,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Some hosts require Referer/Origin — send our site origin
     const site = new URL(req.url);
     const baseOrigin = `${site.protocol}//${site.host}`;
     const headers: Record<string, string> = {
@@ -250,7 +283,6 @@ export async function POST(req: Request) {
     const wantDebug = (searchParams.get("debug") || "") === "1";
 
     const slice = rows.slice(skip, skip + limit);
-    const merchant = (process.env.PARTYTYME_MERCHANT || "105").trim();
 
     let added = 0;
     let updated = 0;
@@ -258,31 +290,43 @@ export async function POST(req: Request) {
 
     for (const raw of slice) {
       const artist = norm(pick(raw, ["Artist", "artist", "ARTIST", "Author", "author", "Singer", "singer"]));
-      const title  = norm(pick(raw, ["Title", "title", "Song", "SongTitle", "song", "Track", "Name", "name"]));
-      const link   = pick(raw, ["URL", "Url", "url", "Link", "PurchaseURL", "purchaseUrl", "Mp3Link", "mp3Link", "href", "src"]);
-      if (!artist || !title) { skipped++; continue; }
+      const title = norm(pick(raw, ["Title", "title", "Song", "SongTitle", "song", "Track", "Name", "name"]));
+      
+      if (!artist || !title) {
+        skipped++;
+        continue;
+      }
 
-      const urlWithAff = withMerchant(link || null, merchant);
+      // Extract disc ID and determine brand
+      const discId = extractDiscId(raw);
+      const brand = getBrandFromDiscId(discId);
+      const purchaseUrl = buildPartyTymeUrl(discId, artist, title);
 
-      const existing = await prisma.track.findFirst({
-        where: { AND: [{ artist: { equals: artist } }, { title: { equals: title } }] },
+      // Use the proper upsertTrack function that handles HD/Regular separately
+      const result = await upsertTrack({
+        source: "Party Tyme",
+        artist,
+        title,
+        trackId: discId,
+        brand,
+        purchaseUrl
       });
 
-      if (!existing) {
-        await prisma.track.create({
-          data: { artist, title, brand: "Party Tyme", source: "Party Tyme", url: urlWithAff || undefined } as any,
-        });
-        added++;
-      } else {
-        await prisma.track.update({
-          where: { id: (existing as any).id },
-          data: { url: urlWithAff || (existing as any).url || undefined } as any,
-        });
-        updated++;
-      }
+      if (result === "added") added++;
+      else if (result === "updated") updated++;
+      else skipped++;
     }
 
     const count = await prisma.track.count();
+    
+    // Count HD vs Regular
+    const hdCount = await prisma.track.count({
+      where: { brand: "Party Tyme HD" }
+    });
+    const regularCount = await prisma.track.count({
+      where: { brand: "Party Tyme Karaoke" }
+    });
+
     return NextResponse.json({
       ok: true,
       stats: {
@@ -294,6 +338,8 @@ export async function POST(req: Request) {
         updated,
         skipped,
         dbCount: count,
+        hdCount,
+        regularCount
       },
       ...(wantDebug ? { debug: info } : {}),
     });
@@ -302,7 +348,7 @@ export async function POST(req: Request) {
   }
 }
 
-// Allow GET from browser address bar to trigger the same work
+// Allow GET from browser address bar
 export async function GET(req: Request) {
   return POST(req);
 }
