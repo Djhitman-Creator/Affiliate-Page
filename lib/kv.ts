@@ -72,7 +72,7 @@ export async function kvSearchSongs(q: string, limit = 25, offset = 0): Promise<
   // Build JSON body for KV search
   const body = {
     affiliateId: KV_AFFILIATE_ID,
-    function: "song",
+    function: "search",  // Changed from "song" to "search"
     parameters: {
       query: q,
       limit,
@@ -108,18 +108,17 @@ export async function kvSearchSongs(q: string, limit = 25, offset = 0): Promise<
       title,
       trackId: String(s.id),
       brand: "Karaoke Version",
-     purchaseUrl: (() => {
-    let fixedUrl = s.url || kvAffLink(artist, title);
-    if (fixedUrl.includes("/mp3-backingtrack/")) {
-      fixedUrl = fixedUrl.replace("/mp3-backingtrack/", "/karaoke/");
-    }
-    return fixedUrl;
-  })(),
-  previewUrl: s.previewUrl,
-  imageUrl: s.imgUrl,
-  url: s.url,
-  createdAt: null,
-};
+      purchaseUrl: (() => {
+        let fixedUrl = s.url || kvAffLink(artist, title);
+        if (fixedUrl.includes("/mp3-backingtrack/")) {
+          fixedUrl = fixedUrl.replace("/mp3-backingtrack/", "/karaoke/");
+        }
+        return fixedUrl;
+      })(),
+      previewUrl: s.previewUrl,
+      imageUrl: s.imgUrl,
+      url: s.url,
+      createdAt: null,
+    };
   });
 }
-
