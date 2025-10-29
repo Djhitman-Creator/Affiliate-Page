@@ -311,16 +311,6 @@ export default function Page() {
             return true;
           });
 
-          // 2) Optional phrase bump to top using combined query
-          const qPhrase = norm([artistQ, titleQ].filter(Boolean).join(' '));
-          unique.sort((a: any, b: any) => {
-            const SA =
-              ((kvSlugFromUrl(a.purchaseUrl || a.buyUrl || '') + ' ' + norm(a.title) + ' ' + norm(a.artist)).includes(qPhrase) ? 1 : 0);
-            const SB =
-              ((kvSlugFromUrl(b.purchaseUrl || b.buyUrl || '') + ' ' + norm(b.title) + ' ' + norm(b.artist)).includes(qPhrase) ? 1 : 0);
-            return SB - SA;
-          });
-
           // 3) Set data
           setData({ items: unique, total: unique.length });
 
