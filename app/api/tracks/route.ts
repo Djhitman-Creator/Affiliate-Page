@@ -19,25 +19,12 @@ type TrackResult = {
 type Errors = Record<string, any>;
 
 const PT_MERCHANT = process.env.PARTYTYME_MERCHANT?.trim() || "105";
-function withMerchant(url: string | null | undefined): string | null {
-  if (!url) return null;
-  try {
-    const u = new URL(String(url));
-    if (!u.searchParams.has("merchant")) u.searchParams.set("merchant", PT_MERCHANT);
-    return u.toString();
-  } catch {
-    const s = String(url);
-    return s.includes("?") ? `${s}&merchant=${PT_MERCHANT}` : `${s}?merchant=${PT_MERCHANT}`;
-  }
-}
+
 function partyTymeSearchUrl(artist?: string | null, title?: string | null): string | null {
   const a = (artist || "").toString().trim();
   const t = (title || "").toString().trim();
   const q = [a, t].filter(Boolean).join(" ");
   if (!q) return null;
-
-  // Party Tyme is an SPA; use hash routing to avoid IIS 404s
-  // Put merchant BEFORE the hash.
   const base = "https://www.partytyme.net/songshop/";
   return `${base}?merchant=${PT_MERCHANT}#/search/${encodeURIComponent(q)}`;
 }
@@ -50,9 +37,14 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const baseUrl = `${url.protocol}//${url.host}`;
   const rawQ = sanitize(url.searchParams.get("q"));
+  
+  // Get sorting parameters
+  const sortBy = url.searchParams.get("sortBy") || "title"; // "title" or "artist"
+  const sortDir = url.searchParams.get("sortDir") || "asc"; // "asc" or "desc"
+  
   if (!rawQ) return NextResponse.json({ items: [], total: 0 });
 
-  await ensureSqliteTables(); // no-op on Postgres
+  await ensureSqliteTables();
 
   const results: TrackResult[] = [];
   const errors: Errors = {};
@@ -97,12 +89,11 @@ export async function GET(req: Request) {
     ],
   };
 
-  // ------------ Party Tyme ------------
+  // ------------ Party Tyme (from database) ------------
   try {
     const pt = await prisma.track.findMany({
       where,
-      orderBy: [{ id: "desc" }],
-      take: 50,
+      take: 100, // Increase limit since we'll sort all together
       select: {
         artist: true,
         title: true,
@@ -123,7 +114,6 @@ export async function GET(req: Request) {
             ? "YouTube"
             : "Party Tyme";
 
-        // Fallback: if no purchaseUrl/url in DB, generate a Party Tyme search link on the fly
         const bestUrl =
           (r as any).purchaseUrl ??
           r.url ??
@@ -143,33 +133,29 @@ export async function GET(req: Request) {
     errors.partytyme = e?.message || String(e);
   }
 
-  // ------------ Karaoke Version ------------
-try {
-  const kvDisabled = String(process.env.KV_DISABLED || "").toLowerCase() === "true";
-  if (kvDisabled) {
-    errors.kv = "disabled by KV_DISABLED env";
-  } else {
-    // Use the proper KV search function from lib/kv.ts
-    const kvResults = await kvSearchSongs(q, 25, 0);
-    
-    // Add debug info
-    debug.kvResultCount = kvResults.length;
-    debug.kvFirstResult = kvResults[0] || null;
-    
-    results.push(
-      ...kvResults.map((item) => ({
-        source: "Karaoke Version" as const,
-        artist: item.artist || "",
-        title: item.title || "",
-        brand: "Karaoke Version",
-        url: item.purchaseUrl || item.url,
-        imageUrl: item.imageUrl ?? null,
-      }))
-    );
+  // ------------ Karaoke Version (from API) ------------
+  try {
+    const kvDisabled = String(process.env.KV_DISABLED || "").toLowerCase() === "true";
+    if (kvDisabled) {
+      errors.kv = "disabled by KV_DISABLED env";
+    } else {
+      const kvResults = await kvSearchSongs(q, 25, 0);
+      
+      results.push(
+        ...kvResults.map((item) => ({
+          source: "Karaoke Version" as const,
+          artist: item.artist || "",
+          title: item.title || "",
+          brand: "Karaoke Version",
+          url: item.purchaseUrl || item.url,
+          imageUrl: item.imageUrl ?? null,
+        }))
+      );
+    }
+  } catch (e: any) {
+    errors.kv = e?.message || String(e);
   }
-} catch (e: any) {
-  errors.kv = e?.message || String(e);
-}
+
   // ------------ YouTube ------------
   try {
     const ytRes = await fetch(`${baseUrl}/api/youtube?q=${encodeURIComponent(q)}`, { cache: "no-store" });
@@ -193,11 +179,36 @@ try {
     errors.youtube = e?.message || String(e);
   }
 
+  // ------------ SORT ALL RESULTS TOGETHER ------------
+  // Sort by the requested field (title or artist)
+  results.sort((a, b) => {
+    let compareValue = 0;
+    
+    if (sortBy === "artist") {
+      compareValue = (a.artist || "").localeCompare(b.artist || "");
+      // If artists are the same, sort by title as secondary
+      if (compareValue === 0) {
+        compareValue = (a.title || "").localeCompare(b.title || "");
+      }
+    } else {
+      // Default to sorting by title
+      compareValue = (a.title || "").localeCompare(b.title || "");
+      // If titles are the same, sort by artist as secondary
+      if (compareValue === 0) {
+        compareValue = (a.artist || "").localeCompare(b.artist || "");
+      }
+    }
+    
+    // Apply sort direction
+    return sortDir === "desc" ? -compareValue : compareValue;
+  });
+
   return NextResponse.json({
     items: results,
     total: results.length,
     errors,
     debug,
     parsed: { q, artistPart, titlePart, tokens },
+    sorting: { sortBy, sortDir }
   });
 }
