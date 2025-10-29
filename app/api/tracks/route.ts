@@ -144,29 +144,32 @@ export async function GET(req: Request) {
   }
 
   // ------------ Karaoke Version ------------
-  try {
-    const kvDisabled = String(process.env.KV_DISABLED || "").toLowerCase() === "true";
-    if (kvDisabled) {
-      errors.kv = "disabled by KV_DISABLED env";
-    } else {
-      // Use the proper KV search function from lib/kv.ts
-      const kvResults = await kvSearchSongs(q, 25, 0);
-      
-      results.push(
-        ...kvResults.map((item) => ({
-          source: "Karaoke Version" as const,
-          artist: item.artist || "",
-          title: item.title || "",
-          brand: "Karaoke Version",
-          url: item.purchaseUrl || item.url,
-          imageUrl: item.imageUrl ?? null,
-        }))
-      );
-    }
-  } catch (e: any) {
-    errors.kv = e?.message || String(e);
+try {
+  const kvDisabled = String(process.env.KV_DISABLED || "").toLowerCase() === "true";
+  if (kvDisabled) {
+    errors.kv = "disabled by KV_DISABLED env";
+  } else {
+    // Use the proper KV search function from lib/kv.ts
+    const kvResults = await kvSearchSongs(q, 25, 0);
+    
+    // Add debug info
+    debug.kvResultCount = kvResults.length;
+    debug.kvFirstResult = kvResults[0] || null;
+    
+    results.push(
+      ...kvResults.map((item) => ({
+        source: "Karaoke Version" as const,
+        artist: item.artist || "",
+        title: item.title || "",
+        brand: "Karaoke Version",
+        url: item.purchaseUrl || item.url,
+        imageUrl: item.imageUrl ?? null,
+      }))
+    );
   }
-
+} catch (e: any) {
+  errors.kv = e?.message || String(e);
+}
   // ------------ YouTube ------------
   try {
     const ytRes = await fetch(`${baseUrl}/api/youtube?q=${encodeURIComponent(q)}`, { cache: "no-store" });
