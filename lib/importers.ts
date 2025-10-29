@@ -35,6 +35,12 @@ function withMerchant(url: string | null | undefined): string | null {
 
 /** Try hard to extract a Party Tyme code like PY22138 from any raw field */
 function extractPtTrackId(raw: Record<string, any>): string | null {
+  // First check for explicit DiscID field (from XML)
+  if (raw.DiscID || raw.discId || raw.discid) {
+    return String(raw.DiscID || raw.discId || raw.discid).toUpperCase();
+  }
+  
+  // Then check other common field names
   const keys = [
     "trackId", "TrackId", "id", "Id", "ID",
     "code", "Code", "productCode", "ProductCode",
@@ -43,38 +49,42 @@ function extractPtTrackId(raw: Record<string, any>): string | null {
     "number", "Number", "no", "No",
   ];
 
-  const candidates: string[] = [];
-
   for (const k of keys) {
     const v = (raw as any)?.[k];
-    if (v != null && v !== "") candidates.push(String(v));
+    if (v != null && v !== "") {
+      const s = String(v);
+      // Check if it's a Party Tyme disc ID format
+      if (/^P[YH]\d+$/i.test(s)) {
+        return s.toUpperCase();
+      }
+    }
   }
-  // scan all string fields too
+  
+  // Last resort: scan all string fields
   for (const v of Object.values(raw)) {
-    if (typeof v === "string") candidates.push(v);
+    if (typeof v === "string") {
+      const match = v.match(/P[YH]\d{3,6}/i);
+      if (match) return match[0].toUpperCase();
+    }
   }
-
-  for (const s of candidates) {
-    const m = s.match(/py\d{3,6}/i);
-    if (m) return m[0].toUpperCase();
-  }
+  
   return null;
 }
 
 /** Build a Party Tyme product URL from raw data or a discovered trackId */
 function buildPartyTymeUrl(raw: Record<string, any>): string | null {
-  const direct =
-    raw.purchaseUrl || raw.productUrl || raw.link || raw.url || null;
+  const direct = raw.purchaseUrl || raw.productUrl || raw.link || raw.url || null;
   if (direct) return withMerchant(String(direct));
 
   const tid = extractPtTrackId(raw);
-  if (tid) {
-    // Use direct product URL with disc ID
-    return `https://www.partytyme.net/songshop/cat/search/item/${tid}?merchant=${PT_MERCHANT}`;
+  if (tid && /^P[YH]\d+$/i.test(tid)) {
+    // Use direct product URL for valid disc IDs
+    return `https://www.partytyme.net/songshop/cat/search/item/${tid.toUpperCase()}?merchant=${PT_MERCHANT}`;
   }
 
+  // Fall back to search URL
   const artist = (raw["Artist"] ?? raw["artist"] ?? raw["ARTIST"] ?? "").toString();
-  const title  = (raw["Title"]  ?? raw["title"]  ?? raw["TITLE"]  ?? "").toString();
+  const title = (raw["Title"] ?? raw["title"] ?? raw["TITLE"] ?? "").toString();
   return partyTymeSearchUrl(artist, title);
 }
 
