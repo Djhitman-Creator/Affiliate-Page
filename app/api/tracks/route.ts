@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { ensureSqliteTables } from "@/lib/ensureSchema";
+import { kvSearchSongs } from "@/lib/kv";
 
 type TrackResult = {
   source: "Party Tyme" | "Karaoke Version" | "YouTube";
@@ -148,37 +149,19 @@ export async function GET(req: Request) {
     if (kvDisabled) {
       errors.kv = "disabled by KV_DISABLED env";
     } else {
-      const kvEndpoint =
-        (process.env.KV_SEARCH_ENDPOINT || "").replace(/\/+$/, "") ||
-        "https://www.karaoke-version.com/api/search";
-      const affiliateId = (process.env.KV_AFFILIATE_ID || "").trim() || "1048";
-
-      const kvPayload = { affiliateId, function: "search", parameters: { query: q } };
-      const qs = new URLSearchParams({ query: JSON.stringify(kvPayload) });
-      const kvUrl = `${kvEndpoint}/?${qs.toString()}`;
-
-      const r = await fetch(kvUrl, { cache: "no-store" });
-      const raw = await r.text();
-      let data: any = raw;
-      try {
-        data = JSON.parse(raw);
-      } catch {}
-
-      if (r.ok && Array.isArray((data as any)?.items)) {
-        results.push(
-          ...(data as any).items.map((it: any) => ({
-            source: "Karaoke Version" as const,
-            artist: it.artist || "",
-            title: it.title || "",
-            brand: "Karaoke Version",
-            url: it.url,
-            imageUrl: it.imageUrl ?? null,
-          }))
-        );
-      } else {
-        errors.kv = `KV ${r.status}`;
-        debug.kv = { kvUrl, body: typeof data === "string" ? String(data).slice(0, 300) : data };
-      }
+      // Use the proper KV search function from lib/kv.ts
+      const kvResults = await kvSearchSongs(q, 25, 0);
+      
+      results.push(
+        ...kvResults.map((item) => ({
+          source: "Karaoke Version" as const,
+          artist: item.artist || "",
+          title: item.title || "",
+          brand: "Karaoke Version",
+          url: item.purchaseUrl || item.url,
+          imageUrl: item.imageUrl ?? null,
+        }))
+      );
     }
   } catch (e: any) {
     errors.kv = e?.message || String(e);
