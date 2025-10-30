@@ -476,6 +476,25 @@ export default function Page() {
         >
           Search
         </button>
+        
+        {/* ADD THE CLEAR BUTTON HERE - RIGHT AFTER SEARCH, BEFORE </form> */}
+        <button
+          type="button"
+          onClick={() => {
+            setArtistQ("");
+            setTitleQ("");
+            setResults([]);
+            setLegacyMap({});
+          }}
+          className="rounded-xl bg-gray-500 px-4 py-2 text-sm font-semibold text-white shadow-sm
+                     hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400
+                     focus:ring-offset-2 focus:ring-offset-black/10
+                     dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500 dark:focus:ring-gray-500"
+          aria-label="Clear search"
+        >
+          Clear
+        </button>
+        
       </form>
 
       {/* Results count */}
@@ -484,6 +503,7 @@ export default function Page() {
           ? 'Searching…'
           : `${data.items.length} shown of ${data.total}`}
       </div>
+
 
       {/* Zero-results notice */}
       {!loading && (artistQ.trim().length > 0 || titleQ.trim().length > 0) && data.total === 0 && (

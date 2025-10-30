@@ -1,39 +1,38 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useTheme } from 'next-themes'
-import { Moon, Sun } from 'lucide-react'
+import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
-  if (!mounted) {
-    // neutral placeholder to avoid hydration mismatch
-    return (
-      <button
-        aria-label="Toggle theme"
-        className="inline-flex h-9 items-center gap-2 rounded-xl border border-black/10 px-3 text-sm
-                   hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
-      >
-        <Sun className="h-4 w-4" />
-        <span className="hidden sm:inline">Theme</span>
-      </button>
-    )
-  }
+  useEffect(() => {
+    // Check localStorage first
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark" || savedTheme === "light") {
+      setTheme(savedTheme);
+      document.documentElement.classList.toggle("dark", savedTheme === "dark");
+    } else {
+      // Check system preference if no saved preference
+      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      setTheme(isDark ? "dark" : "light");
+      document.documentElement.classList.toggle("dark", isDark);
+    }
+  }, []);
 
-  const isDark = (resolvedTheme ?? theme) === 'dark'
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.classList.toggle("dark", newTheme === "dark");
+  };
+
   return (
     <button
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      aria-pressed={isDark}
+      onClick={toggleTheme}
+      className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
       aria-label="Toggle theme"
-      className="inline-flex h-9 items-center gap-2 rounded-xl border border-black/10 bg-white px-3 text-sm
-                 hover:bg-black/5 dark:border-white/10 dark:bg-neutral-900 dark:text-white dark:hover:bg-white/10"
     >
-      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-      <span className="hidden sm:inline">{isDark ? 'Light' : 'Dark'}</span>
+      {theme === "light" ? "🌙" : "☀️"}
     </button>
-  )
+  );
 }
