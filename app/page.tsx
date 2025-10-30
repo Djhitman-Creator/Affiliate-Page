@@ -98,7 +98,7 @@ function JetSpinner({ size = 24 }: { size?: number }) {
               type="rotate"
               from="0 18 18"
               to="360 18 18"
-              dur="0.9s"
+              dur="1"
               repeatCount="indefinite"
             />
           </path>
@@ -108,295 +108,301 @@ function JetSpinner({ size = 24 }: { size?: number }) {
   );
 }
 
-function BuyButton({ item }: { item: Row }) {
-  const href = urlOf(item);
-  if (!href) return null;
-  const label = item.brandDisplay ?? item.brand ?? "Store";
-
+function LastUpdatedNote({ className }: { className?: string }) {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`View / Buy on ${label}`}
-      className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition
-                 hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400
-                 focus:ring-offset-2 focus:ring-offset-black/10
-                 dark:bg-emerald-700 dark:hover:bg-emerald-600 dark:focus:ring-offset-white/10"
-    >
-      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-        <path d="M3 3h2l.4 2M7 13h6a2 2 0 0 0 1.94-1.5l1.2-4.5A1 1 0 0 0 15.2 6H6.1M7 13l-2 4m2-4l2 4m6-4l-2 4" />
-      </svg>
-      <span>View / Buy</span>
-    </a>
-  );
-}
-
-
-// Shows today's date (no time), forced white text both themes
-function LastUpdatedNote({ className = "" }: { className?: string }) {
-  const [dateStr, setDateStr] = useState("");
-
-  useEffect(() => {
-    const now = new Date();
-    const fmt = new Intl.DateTimeFormat(undefined, {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-    setDateStr(fmt.format(now));
-  }, []);
-
-  return (
-    <div className={`mb-1 text-xs md:text-sm font-medium !text-white [color:#fff] ${className}`}>
-      Last updated{" "}
-      <span className="font-semibold !text-white [color:#fff]">
-        {dateStr}
-      </span>
+    <div className={`text-xs text-white/40 dark:text-white/40 ${className}`}>
+      Last updated October 29, 2025
     </div>
   );
 }
 
-/* ---------- Legacy dialog (top-level component) ---------- */
+// ---------- legacy data types ----------
+type LegacyRecord = {
+  artist: string;
+  song: string;
+  mf_code: string;
+  track: string;
+};
+type LegacyData = {
+  count: number;
+  records: LegacyRecord[];
+};
+
+// ---------- legacy modal ----------
 function LegacyDialog({
   open,
   onClose,
   artist,
   title,
-  discs
+  records
 }: {
   open: boolean;
   onClose: () => void;
   artist: string;
   title: string;
-  discs: string[];
+  records: LegacyRecord[];
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    function handleClickOutside(e: MouseEvent) {
+      if (dialogRef.current && !dialogRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    if (open) {
+      document.addEventListener('keydown', handleEscape);
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [open, onClose]);
+
   if (!open) return null;
+
+  // Group records by MF CODE
+  const grouped = records.reduce((acc, rec) => {
+    if (!acc[rec.mf_code]) acc[rec.mf_code] = [];
+    acc[rec.mf_code].push(rec);
+    return acc;
+  }, {} as Record<string, LegacyRecord[]>);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-2xl p-5 bg-white text-black dark:bg-neutral-900 dark:text-white shadow-xl">
-        <div className="text-lg font-semibold mb-2">
-          Legacy discs — {artist} — {title}
-        </div>
-        <div className="max-h-64 overflow-auto rounded border border-black/10 dark:border-white/10 p-3 text-sm leading-6">
-          {discs.length === 0 ? (
-            <div className="opacity-70">No legacy discs found.</div>
-          ) : (
-            <ul className="list-disc pl-5">
-              {discs.map((d, i) => <li key={i}>{d}</li>)}
-            </ul>
-          )}
-        </div>
-        <div className="mt-4 flex justify-end">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div
+        ref={dialogRef}
+        className="relative max-h-[80vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-neutral-900"
+      >
+        {/* Header */}
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-black dark:text-white">Legacy Disc Codes</h2>
+            <p className="text-sm text-black/60 dark:text-white/60">
+              {artist} - {title}
+            </p>
+          </div>
           <button
-            className="rounded-xl px-4 py-2 bg-black text-white dark:bg-white dark:text-black"
             onClick={onClose}
+            className="rounded-lg p-2 hover:bg-black/10 dark:hover:bg-white/10"
+            aria-label="Close"
           >
-            Close
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
           </button>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-4">
+          {Object.entries(grouped)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([mfCode, recs]) => (
+              <div key={mfCode} className="rounded-lg border border-black/10 p-3 dark:border-white/10">
+                <div className="mb-2 font-medium text-black dark:text-white">{mfCode}</div>
+                <div className="text-sm text-black/70 dark:text-white/70">
+                  Tracks: {recs.map(r => r.track).join(', ')}
+                </div>
+              </div>
+            ))}
         </div>
       </div>
     </div>
   );
 }
 
-/* ---------- page ---------- */
-export default function Page() {
-  // input fields (no debounce)
+/* ---------- BuyButton component ---------- */
+function BuyButton({ item }: { item: Row }) {
+  const url = urlOf(item);
+  if (!url) return <span className="text-gray-400">-</span>;
+
+  // determine button color
+  let buttonClass = "btn-buy-default";
+  if (item.source === 'partytyme') {
+    buttonClass = "btn-buy-pt";
+  } else if (item.source === 'karaokeversion') {
+    buttonClass = "btn-buy-kv";
+  }
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`btn-buy ${buttonClass}`}
+      aria-label={`Buy ${item.title} by ${item.artist}`}
+    >
+      View / Buy
+    </a>
+  );
+}
+
+/* ---------- main component ---------- */
+export default function Home() {
   const [artistInput, setArtistInput] = useState('');
   const [titleInput, setTitleInput] = useState('');
-
-  // committed search params (set on submit)
   const [artistQ, setArtistQ] = useState('');
   const [titleQ, setTitleQ] = useState('');
-
-  // table state
-  const [page, setPage] = useState(1);
-  const [sortBy, setSortBy] = useState<'artist' | 'title' | 'brand'>('artist');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<{ items: Row[]; total: number }>({ items: [], total: 0 });
 
-  // Legacy state
-  const [legacyMap, setLegacyMap] = useState<Record<string, { count: number; discs: string[] }>>({});
-  const [legacyDialog, setLegacyDialog] = useState<{ open: boolean; artist: string; title: string; discs: string[] }>({ open: false, artist: "", title: "", discs: [] });
+  // sorting
+  const [sortBy, setSortBy] = useState<'artist' | 'title' | 'brand' | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
-  // simple key to trigger fetch sequence order
-  const reqId = useRef(0);
+  // YouTube
+  const [ytHits, setYtHits] = useState<YTHit[]>([]);
+  const [ytDebug, setYtDebug] = useState<any[]>([]);
+  const [ytLoading, setYtLoading] = useState(false);
 
-  // submit handler: commit inputs → queries, reset page
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setArtistQ(artistInput);
-    setTitleQ(titleInput);
-    setPage(1);
+  // legacy map: "artist|||title" -> LegacyData
+  const [legacyMap, setLegacyMap] = useState<Record<string, LegacyData>>({});
+  
+  // legacy dialog
+  const [legacyDialog, setLegacyDialog] = useState<{
+    open: boolean;
+    artist: string;
+    title: string;
+    records: LegacyRecord[];
+  }>({ open: false, artist: '', title: '', records: [] });
+
+  // unique key for rows
+  function rowKey(t: Row, index: number) {
+    // try: id, trackId, combo, fallback
+    const parts = [
+      t.id,
+      t.trackId,
+      `${t.artist}-${t.title}-${t.source}`,
+      index
+    ].filter((v) => v != null);
+    return parts[0]?.toString() ?? `row-${index}`;
   }
 
-  // stable row key
-  function rowKey(t: Row, idx: number) {
-    const parts = [t.source, t.trackId, t.artist, t.title, t.brand].map((v) => v || '').join('|');
-    return parts || `row-${idx}`;
-  }
-
-  /* ---------- fetch /api/tracks then filter with separate Artist/Title rules ---------- */
-  useEffect(() => {
-    let cancelled = false;
-    const my = ++reqId.current;
-
-    async function run() {
-      setLoading(true);
-
-      if (!artistQ.trim() && !titleQ.trim()) {
-        if (!cancelled && my === reqId.current) {
-          setData({ items: [], total: 0 });
-          setLegacyMap({});
-          setLoading(false);
-        }
-        return;
-      }
-
-      try {
-        // still using your server route; client refines results
-        const url = `/api/tracks?q=${encodeURIComponent(
-          (artistQ + ' ' + titleQ).trim()
-        )}&sortBy=${sortBy}&sortDir=${sortDir}&page=${page}&pageSize=${PAGE_SIZE}`;
-
-        const res = await fetch(url, { cache: 'no-store' });
-        const json = await res.json();
-
-        if (!cancelled && my === reqId.current) {
-          const aTokens = norm(artistQ).split(' ').filter(Boolean);
-          const tTokens = norm(titleQ).split(' ').filter(Boolean);
-
-          const every = (hay: string, tokens: string[]) =>
-            tokens.every((t) => hay.includes(t));
-
-          const filtered = Array.isArray(json.items)
-            ? json.items.filter((it: any) => {
-              const url = urlOf(it);
-              const isKV = isKaraokeVersionHost(url);
-
-              const A = norm(it.artist);
-              const T = norm(it.title);
-              const kvA = isKV ? kvArtistFromUrl(url) : '';
-              const slug = isKV ? kvSlugFromUrl(url) : '';
-
-              // If a field is empty, treat it as "no constraint" (true).
-              // Non-KV: artist field satisfies artist tokens; title field satisfies title tokens.
-              const artistPassNonKV = aTokens.length === 0 || every(A, aTokens);
-              const titlePassNonKV = tTokens.length === 0 || every(T, tTokens);
-
-              // KV: artist-from-URL satisfies artist tokens;
-              //     title OR slug satisfies title tokens.
-              const artistPassKV = aTokens.length === 0 || (kvA ? every(kvA, aTokens) : false);
-              const titlePassKV =
-                tTokens.length === 0 || (every(T, tTokens) || (slug ? every(slug, tTokens) : false));
-
-              return isKV
-                ? artistPassKV && titlePassKV
-                : artistPassNonKV && titlePassNonKV;
-            })
-            : [];
-
-          // 1) Deduplicate by canonical URL (fallback: artist|title|brand key)
-          const seen = new Set<string>();
-          const unique = filtered.filter((it: any) => {
-            const url = String(it.purchaseUrl || it.buyUrl || '').trim();
-            const key =
-              url ||
-              `${norm(it.artist)}|${norm(it.title)}|${(it.brandDisplay ?? it.brand ?? '').toLowerCase()}`;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          });
-
-          // 3) Set data
-          setData({ items: unique, total: unique.length });
-
-          // 4) Fetch legacy tracks for the current artist/title search
-          try {
-            const legacyParams = new URLSearchParams();
-            if (artistQ) legacyParams.set("artist", artistQ);
-            if (titleQ) legacyParams.set("title", titleQ);
-            const legacyRes = await fetch(`/api/legacy?${legacyParams.toString()}`);
-            const legacyData = await legacyRes.json();
-
-            // Build a quick lookup: key = norm(artist)|||norm(title)
-            const legacyLookup: Record<string, { count: number; discs: string[] }> = {};
-            (legacyData.items || []).forEach((it: any) => {
-              const key = `${norm(it.artist || "")}|||${norm(it.title || "")}`;
-              legacyLookup[key] = { count: it.count || 0, discs: it.discs || [] };
-            });
-
-
-            setLegacyMap(legacyLookup);
-          } catch (err) {
-            console.error("Legacy fetch failed:", err);
-            setLegacyMap({});
-          }
-        }
-      } catch {
-        if (!cancelled && my === reqId.current) {
-          setData({ items: [], total: 0 });
-          setLegacyMap({});
-        }
-      } finally {
-        if (!cancelled && my === reqId.current) setLoading(false);
-      }
-    }
-
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [artistQ, titleQ, page, sortBy, sortDir]);
-
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil((data.total || 0) / PAGE_SIZE)),
-    [data.total]
-  );
-
-  function toggleSort(col: 'artist' | 'title' | 'brand') {
-    setPage(1);
-    if (col === sortBy) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else {
-      setSortBy(col);
+  /* ---------- Toggle sorting ---------- */
+  function toggleSort(field: 'artist' | 'title' | 'brand') {
+    if (sortBy === field) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
       setSortDir('asc');
     }
   }
 
-  /* ---------- YouTube (use title if provided, else artist) ---------- */
-  const [ytLoading, setYtLoading] = useState(false);
-  const [ytHits, setYtHits] = useState<YTHit[]>([]);
-  const [ytDebug, setYtDebug] = useState<any[]>([]);
+  /* ---------- fetch logic ---------- */
+  async function doSearch() {
+    setLoading(true);
+    setLegacyMap({});
+    try {
+      const url = new URL('/api/tracks', window.location.origin);
+      if (artistQ) url.searchParams.set('q', artistQ);
+      if (titleQ) url.searchParams.set('title', titleQ);
+      url.searchParams.set('page', '1');
+      url.searchParams.set('pageSize', String(PAGE_SIZE));
+
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error();
+      const json = await res.json();
+      setData(json);
+
+      // Build legacy map from response
+      if (json.items?.length) {
+        const newMap: Record<string, LegacyData> = {};
+        json.items.forEach((item: any) => {
+          if (item.legacyData) {
+            const url = urlOf(item);
+            const preferArtist = isKaraokeVersionHost(url) ? kvArtistFromUrl(url) || item.artist : item.artist;
+            const preferTitle = isKaraokeVersionHost(url) ? kvSlugFromUrl(url) || item.title : item.title;
+            const key = `${norm(preferArtist)}|||${norm(preferTitle)}`;
+            newMap[key] = item.legacyData;
+          }
+        });
+        setLegacyMap(newMap);
+      }
+    } catch {
+      setData({ items: [], total: 0 });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /* ---------- form submit ---------- */
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setArtistQ(artistInput);
+    setTitleQ(titleInput);
+  }
+
+  /* ---------- effect: search ---------- */
+  useEffect(() => {
+    const q = artistQ.trim() + ' ' + titleQ.trim();
+    if (q.trim()) {
+      doSearch();
+    } else {
+      setData({ items: [], total: 0 });
+      setLegacyMap({});
+    }
+  }, [artistQ, titleQ]);
+
+  /* ---------- effect: sorting ---------- */
+  const sortedItems = useMemo(() => {
+    if (!sortBy) return data.items;
+    const items = [...data.items];
+    items.sort((a, b) => {
+      let aVal = '', bVal = '';
+      if (sortBy === 'artist') {
+        aVal = (a.artist ?? '').toLowerCase();
+        bVal = (b.artist ?? '').toLowerCase();
+      } else if (sortBy === 'title') {
+        aVal = (a.title ?? '').toLowerCase();
+        bVal = (b.title ?? '').toLowerCase();
+      } else if (sortBy === 'brand') {
+        aVal = (a.brandDisplay ?? a.brand ?? '').toLowerCase();
+        bVal = (b.brandDisplay ?? b.brand ?? '').toLowerCase();
+      }
+      return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    });
+    return items;
+  }, [data.items, sortBy, sortDir]);
 
   useEffect(() => {
+    setData((prev) => ({ ...prev, items: sortedItems }));
+  }, [sortedItems]);
+
+  /* ---------- effect: YouTube search ---------- */
+  useEffect(() => {
     let cancelled = false;
-    setYtHits([]);
-    setYtDebug([]);
-
-    // Use both fields if available: "artist title"
-    const qBase = [artistQ.trim(), titleQ.trim()].filter(Boolean).join(' ');
-
-    if (!qBase) {
-      setYtLoading(false);
-      return;
-    }
-    // if there are no rows, still allow YT search using the provided field
-    setYtLoading(true);
-
     async function run() {
-      try {
-        const res = await fetch(
-          `/api/youtube?q=${encodeURIComponent(qBase + ' karaoke')}&debug=1`,
-          { cache: 'no-store' }
-        );
-        const json = await res.json();
-        if (cancelled) return;
+      if (!artistQ && !titleQ) {
+        setYtHits([]);
+        setYtDebug([]);
+        return;
+      }
+      // Require at least one non-empty query and at least one API result
+      if ((!artistQ.trim() && !titleQ.trim()) || data.total === 0) {
+        setYtHits([]);
+        setYtDebug([]);
+        return;
+      }
 
-        const items: YTHit[] = Array.isArray(json?.items) ? json.items : [];
-        const debug = Array.isArray(json?.debug) ? json.debug : [];
+      setYtLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (artistQ) params.set('artist', artistQ);
+        if (titleQ) params.set('title', titleQ);
+
+        const res = await fetch(`/api/youtube?${params}`);
+        if (!res.ok || cancelled) {
+          if (!cancelled) {
+            setYtHits([]);
+            setYtDebug([]);
+          }
+          return;
+        }
+        const { items = [], debug = [] } = await res.json();
 
         // Split artist + title tokens separately for tighter checks
         const aTokens = norm(artistQ).split(' ').filter(Boolean);
@@ -515,7 +521,7 @@ export default function Page() {
                 Brand {sortBy === 'brand' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
               </th>
               <th className="text-black dark:text-white">Legacy</th>
-              <th className="text-right text-black dark:text-white pr-4">Buy</th>
+              <th className="text-black dark:text-white">Buy</th>
             </tr>
           </thead>
           <tbody>
@@ -549,22 +555,30 @@ export default function Page() {
                     if (legacy && legacy.count > 0) {
                       return (
                         <button
-                          className="rounded-full px-2.5 py-1 text-xs font-semibold bg-amber-500 text-black hover:bg-amber-400"
-                          onClick={() =>
-                            setLegacyDialog({
-                              open: true,
-                              artist: t.artist || '',
-                              title: t.title || '',
-                              discs: legacy.discs || [],
-                            })
-                          }
-                          title={`${legacy.count} legacy disc${legacy.count === 1 ? '' : 's'}`}
+                          onClick={async () => {
+                            // Fetch full legacy data
+                            const params = new URLSearchParams({
+                              artist: preferArtist,
+                              title: preferTitle
+                            });
+                            const res = await fetch(`/api/legacy?${params}`);
+                            if (res.ok) {
+                              const data = await res.json();
+                              setLegacyDialog({
+                                open: true,
+                                artist: preferArtist,
+                                title: preferTitle,
+                                records: data.records || []
+                              });
+                            }
+                          }}
+                          className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:hover:bg-amber-900/50"
                         >
                           Legacy ({legacy.count})
                         </button>
                       );
                     }
-                    return <span className="text-xs opacity-60">—</span>;
+                    return '—';
                   })()}
                 </td>
 
@@ -583,7 +597,7 @@ export default function Page() {
           <div className="mb-3 text-sm text-black dark:text-white">
             YouTube Official Channels for{' '}
             <span className="font-semibold">
-              “{titleQ.trim() || artistQ.trim()}”
+              "{titleQ.trim() || artistQ.trim()}"
             </span>
           </div>
 
@@ -618,34 +632,27 @@ export default function Page() {
                           position: 'fixed',
                           bottom: '16px',
                           right: '16px',
-                          background: 'rgba(0,0,0,0.75)',
+                          backgroundColor: 'rgba(0, 0, 0, 0.8)',
                           color: 'white',
-                          padding: '8px 10px',
+                          padding: '8px 12px',
                           borderRadius: '8px',
-                          fontSize: '12px',
+                          fontSize: '14px',
                           zIndex: '9999',
                         });
                         document.body.appendChild(el);
-                        setTimeout(() => el.remove(), 900);
+                        setTimeout(() => el.remove(), 2000);
                       }}
-                      className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold
-                                 shadow-sm border border-black/10 bg-blue-600 text-white
-                                 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400
-                                 focus:ring-offset-2 focus:ring-offset-black/10 dark:border-white/10"
+                      className="rounded-lg bg-black/10 px-3 py-1.5 text-xs font-medium text-black hover:bg-black/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
                     >
-                      Copy
+                      Copy Link
                     </button>
-
                     <a
                       href={hit.url}
                       target="_blank"
-                      rel="noopener"
-                      className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold
-                                 shadow-sm border border-black/10 bg-[rgb(68,0,1)] text-white
-                                 hover:bg-[rgb(68,0,1)]/90 focus:outline-none focus:ring-2 focus:ring-[rgba(68,0,1,0.6)]
-                                 focus:ring-offset-2 focus:ring-offset-black/10 dark:border-white/10"
+                      rel="noopener noreferrer"
+                      className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
                     >
-                      View
+                      Watch on YouTube
                     </a>
                   </div>
                 </li>
@@ -654,77 +661,21 @@ export default function Page() {
           )}
 
           {!ytLoading && ytHits.length === 0 && (
-            <div className="text-sm text-black dark:text-white/70">No official channel videos found.</div>
+            <div className="text-xs text-black/50 dark:text-white/50">
+              No matching videos from official karaoke channels
+            </div>
           )}
-
-          {ytDebug.length > 0 && (
-            <details className="mt-3 text-xs opacity-80">
-              <summary>Why?</summary>
-              <ul className="mt-2 space-y-1">
-                {ytDebug.slice(0, 20).map((d: any, i: number) => (
-                  <li key={i}>
-                    <span className={d.ok ? 'text-green-400' : 'text-red-400'}>
-                      [{d.step}] {d.channel || ''}
-                    </span>
-                    : {d.ok ? 'ok' : 'failed'}
-                    {d.note ? ` — ${String(d.note).slice(0, 180)}` : ''}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
-
-          <div className="mt-5">
-            {(() => {
-              const qYT = [artistQ.trim(), titleQ.trim()].filter(Boolean).join(' ');
-              const label = qYT || (titleQ || artistQ);
-              return (
-                <a
-                  href={`https://www.youtube.com/results?search_query=${encodeURIComponent((qYT || '').trim() + ' karaoke')}`}
-                  target="_blank"
-                  rel="noopener"
-                  className="block w-full rounded-xl bg-[rgb(68,0,1)] px-4 py-3 text-center text-sm font-semibold text-white
-                 hover:bg-[rgb(68,0,1)]/90 focus:outline-none focus:ring-2 focus:ring-[rgba(68,0,1,0.6)]
-                 focus:ring-offset-2 focus:ring-offset-black/10 dark:focus:ring-offset-white/10"
-                >
-                  General Results for “{label}” on YouTube
-                </a>
-              );
-            })()}
-          </div>
         </div>
       )}
 
-      {/* Pagination */}
-      <div className="mt-5 flex items-center justify-between">
-        <button
-          className="btn !bg-white !text-black dark:!bg-neutral-900 dark:!text-white"
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page <= 1}
-        >
-          Prev
-        </button>
-        <div className="text-sm text-white dark:text-white/70">
-          Page {page} / {totalPages}
-        </div>
-        <button
-          className="btn !bg-white !text-black dark:!bg-neutral-900 dark:!text-white"
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          disabled={page >= totalPages}
-        >
-          Next
-        </button>
-      </div>
-
-      {/* ✅ Mount the Legacy dialog once */}
+      {/* Legacy Dialog */}
       <LegacyDialog
         open={legacyDialog.open}
-        onClose={() => setLegacyDialog({ open: false, artist: "", title: "", discs: [] })}
+        onClose={() => setLegacyDialog({ open: false, artist: '', title: '', records: [] })}
         artist={legacyDialog.artist}
         title={legacyDialog.title}
-        discs={legacyDialog.discs}
+        records={legacyDialog.records}
       />
     </main>
   );
 }
-
