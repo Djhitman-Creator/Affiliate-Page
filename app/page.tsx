@@ -261,7 +261,7 @@ export default function Home() {
 
   // legacy map: "artist|||title" -> LegacyData
   const [legacyMap, setLegacyMap] = useState<Record<string, LegacyData>>({});
-  
+
   // legacy dialog
   const [legacyDialog, setLegacyDialog] = useState<{
     open: boolean;
@@ -408,7 +408,7 @@ export default function Home() {
         const aTokens = norm(artistQ).split(' ').filter(Boolean);
         const tTokens = norm(titleQ).split(' ').filter(Boolean);
 
-        const strict = items.filter((it) => {
+        const strict = items.filter((it: YTHit) => {
           const title = (it.title || '').toLowerCase();
           const label = (it.label || '').toLowerCase();   // e.g. "Party Tyme"
           const handle = (it.handle || '').toLowerCase(); // e.g. "singkingkaraoke"
