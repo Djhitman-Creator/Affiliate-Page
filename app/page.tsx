@@ -201,6 +201,67 @@ function LegacyDialog({
   );
 }
 
+/* ---------- Admin Section Component ---------- */
+function AdminSection() {
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [password, setPassword] = useState('');
+  
+  const handleUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === 'Powder01!') {
+      setIsUnlocked(true);
+      setPassword('');
+    } else {
+      alert('Incorrect password');
+      setPassword('');
+    }
+  };
+
+  if (!isUnlocked) {
+    return (
+      <div className="mt-12 border-t border-white/10 pt-6">
+        <form onSubmit={handleUnlock} className="flex items-center gap-2">
+          <input
+            type="password"
+            placeholder="Admin password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="rounded-lg bg-white/10 px-3 py-1 text-sm text-white placeholder:text-white/40 focus:bg-white/20 focus:outline-none"
+          />
+          <button type="submit" className="rounded-lg bg-white/10 px-4 py-1 text-sm text-white hover:bg-white/20">
+            Unlock Admin
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-12 border-t border-white/10 pt-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-white/70">Admin Controls</h3>
+        <button onClick={() => setIsUnlocked(false)} className="text-xs text-white/40 hover:text-white/60">
+          Lock
+        </button>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <a href="/admin" className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
+          Admin Panel
+        </a>
+        <a href="https://karaokehouston.com" target="_blank" rel="noopener noreferrer" className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
+          Karaoke Houston
+          <button onClick={() => window.location.href = '/api/admin/track-count'} className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
+          Track Count
+        </button>
+        <button onClick={() => window.location.href = '/api/admin/check-db'} className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
+          Check DB
+        </button>
+        </a>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- page ---------- */
 export default function Page() {
   // input fields (no debounce)
@@ -724,7 +785,10 @@ export default function Page() {
         title={legacyDialog.title}
         discs={legacyDialog.discs}
       />
+      
+      <AdminSection />
     </main>
+
   );
 }
 
