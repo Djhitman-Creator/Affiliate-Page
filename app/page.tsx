@@ -476,7 +476,6 @@ export default function Page() {
         >
           Search
         </button>
-
       </form>
 
       {/* Results count */}
@@ -485,7 +484,6 @@ export default function Page() {
           ? 'Searching…'
           : `${data.items.length} shown of ${data.total}`}
       </div>
-
 
       {/* Zero-results notice */}
       {!loading && (artistQ.trim().length > 0 || titleQ.trim().length > 0) && data.total === 0 && (
