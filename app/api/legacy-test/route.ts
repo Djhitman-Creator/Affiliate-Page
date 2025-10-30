@@ -1,4 +1,5 @@
-﻿import { NextResponse } from "next/server";
+﻿export const runtime = "nodejs";
+import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 import { parse } from "csv-parse/sync";
