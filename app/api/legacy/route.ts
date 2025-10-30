@@ -1,14 +1,16 @@
 export const runtime = "nodejs";
-import { NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
+
+import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 import { parse } from "csv-parse/sync";
 
-export async function GET(req: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const url = new URL(req.url);
-    const artist = url.searchParams.get("artist") || "";
-    const title = url.searchParams.get("title") || "";
+    const searchParams = request.nextUrl.searchParams;
+    const artist = searchParams.get("artist") || "";
+    const title = searchParams.get("title") || "";
     
     if (!artist && !title) {
       return NextResponse.json({ items: [] });
