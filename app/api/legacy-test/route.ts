@@ -9,12 +9,11 @@ export async function GET(req: Request) {
     const csvPath = path.join(process.cwd(), "data", "Legacy_Track_Songbook.csv");
     const csvContent = await fs.readFile(csvPath, "utf-8");
     
-    // Parse CSV - just get first 10 records for testing
+    // Parse CSV - no size limit, but we'll only return first 5
     const records = parse(csvContent, {
       columns: true,
       skip_empty_lines: true,
-      trim: true,
-      max_record_size: 10
+      trim: true
     });
     
     return NextResponse.json({
