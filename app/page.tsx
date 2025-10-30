@@ -515,7 +515,7 @@ export default function Page() {
                 Brand {sortBy === 'brand' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
               </th>
               <th className="text-black dark:text-white">Legacy</th>
-              <th className="text-black dark:text-white">Buy</th>
+              <th className="text-right text-black dark:text-white pr-4">Buy</th>
             </tr>
           </thead>
           <tbody>
@@ -568,7 +568,7 @@ export default function Page() {
                   })()}
                 </td>
 
-                <td className="text-right">
+                <td className="text-right pr-4">
                   <BuyButton item={t} />
                 </td>
               </tr>
