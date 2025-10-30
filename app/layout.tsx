@@ -23,24 +23,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   <p className="text-xs text-white/70 -mt-1">Modern Karaoke Search Engine</p>
                 </div>
               </div>
-
-              {/* Make header buttons readable in light mode */}
-              <nav className="flex gap-3">
-                <a
-                  className="btn !bg-white !text-black dark:!bg-neutral-900 dark:!text-white"
-                  href="/admin"
-                >
-                  Admin
-                </a>
-                <a
-                  className="btn !bg-white !text-black dark:!bg-neutral-900 dark:!text-white"
-                  href="https://karaokehouston.com"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Karaoke Houston
-                </a>
-              </nav>
             </header>
 
             {children}
