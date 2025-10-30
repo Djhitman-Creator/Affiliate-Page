@@ -6,6 +6,40 @@ import prisma from "@/lib/db";
 import { ensureSqliteTables } from "@/lib/ensureSchema";
 import { kvSearchSongs } from "@/lib/kv";
 
+// Helper function to get legacy data from CSV
+async function getLegacyData(artist: string, title: string) {
+  try {
+    const fs = require("fs/promises");
+    const path = require("path");
+    const { parse } = require("csv-parse/sync");
+
+    const csvPath = path.join(process.cwd(), "data", "Legacy_Track_Songbook.csv");
+    const csvContent = await fs.readFile(csvPath, "utf-8");
+    const records = parse(csvContent, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true
+    });
+
+    // Find matching records
+    const matches = records.filter((record: any) => {
+      const matchArtist = record.ARTIST?.toLowerCase().includes(artist.toLowerCase());
+      const matchTitle = record.SONG?.toLowerCase().includes(title.toLowerCase());
+      return matchArtist && matchTitle;
+    });
+
+    if (matches.length === 0) return null;
+
+    return {
+      hasLegacy: true,
+      count: matches.length,
+      records: matches.slice(0, 20) // Limit to 20 for performance
+    };
+  } catch (error) {
+    return null; // Silently fail - don't break main search
+  }
+}
+
 type TrackResult = {
   source: "Party Tyme" | "Karaoke Version" | "YouTube";
   artist: string;
@@ -37,11 +71,11 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const baseUrl = `${url.protocol}//${url.host}`;
   const rawQ = sanitize(url.searchParams.get("q"));
-  
+
   // Get sorting parameters
   const sortBy = url.searchParams.get("sortBy") || "title"; // "title" or "artist"
   const sortDir = url.searchParams.get("sortDir") || "asc"; // "asc" or "desc"
-  
+
   if (!rawQ) return NextResponse.json({ items: [], total: 0 });
 
   await ensureSqliteTables();
@@ -60,24 +94,24 @@ export async function GET(req: Request) {
   const tokenAND =
     tokens.length > 1
       ? tokens.map((t) => ({
-          OR: [
-            { artist: { contains: t, mode: "insensitive" as const } },
-            { title: { contains: t, mode: "insensitive" as const } },
-          ],
-        }))
+        OR: [
+          { artist: { contains: t, mode: "insensitive" as const } },
+          { title: { contains: t, mode: "insensitive" as const } },
+        ],
+      }))
       : [];
 
   const where = {
     OR: [
       ...(artistPart && titlePart
         ? [
-            {
-              AND: [
-                { artist: { contains: artistPart, mode: "insensitive" as const } },
-                { title: { contains: titlePart, mode: "insensitive" as const } },
-              ],
-            },
-          ]
+          {
+            AND: [
+              { artist: { contains: artistPart, mode: "insensitive" as const } },
+              { title: { contains: titlePart, mode: "insensitive" as const } },
+            ],
+          },
+        ]
         : []),
       ...(tokenAND.length ? [{ AND: tokenAND }] : []),
       {
@@ -111,8 +145,8 @@ export async function GET(req: Request) {
           r.source === "Karaoke Version"
             ? "Karaoke Version"
             : r.source === "YouTube"
-            ? "YouTube"
-            : "Party Tyme";
+              ? "YouTube"
+              : "Party Tyme";
 
         const bestUrl =
           (r as any).purchaseUrl ??
@@ -140,7 +174,7 @@ export async function GET(req: Request) {
       errors.kv = "disabled by KV_DISABLED env";
     } else {
       const kvResults = await kvSearchSongs(q, 25, 0);
-      
+
       results.push(
         ...kvResults.map((item) => ({
           source: "Karaoke Version" as const,
@@ -183,7 +217,7 @@ export async function GET(req: Request) {
   // Sort by the requested field (title or artist)
   results.sort((a, b) => {
     let compareValue = 0;
-    
+
     if (sortBy === "artist") {
       compareValue = (a.artist || "").localeCompare(b.artist || "");
       // If artists are the same, sort by title as secondary
@@ -198,13 +232,24 @@ export async function GET(req: Request) {
         compareValue = (a.artist || "").localeCompare(b.artist || "");
       }
     }
-    
+
     // Apply sort direction
     return sortDir === "desc" ? -compareValue : compareValue;
   });
 
+  // Add legacy data to each result
+  const resultsWithLegacy = await Promise.all(
+    results.map(async (track) => {
+      const legacyData = await getLegacyData(track.artist || "", track.title || "");
+      return {
+        ...track,
+        legacy: legacyData
+      };
+    })
+  );
+
   return NextResponse.json({
-    items: results,
+    items: resultsWithLegacy,
     total: results.length,
     errors,
     debug,
