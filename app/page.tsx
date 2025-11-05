@@ -205,7 +205,7 @@ function LegacyDialog({
 function AdminSection() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [password, setPassword] = useState('');
-  
+
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === 'Powder01!') {
@@ -251,11 +251,11 @@ function AdminSection() {
         <a href="https://karaokehouston.com" target="_blank" rel="noopener noreferrer" className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
           Karaoke Houston
           <button onClick={() => window.location.href = '/api/admin/track-count'} className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
-          Track Count
-        </button>
-        <button onClick={() => window.location.href = '/api/admin/check-db'} className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
-          Check DB
-        </button>
+            Track Count
+          </button>
+          <button onClick={() => window.location.href = '/api/admin/check-db'} className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
+            Check DB
+          </button>
         </a>
       </div>
     </div>
@@ -377,18 +377,40 @@ export default function Page() {
 
           // 4) Fetch legacy tracks for the current artist/title search
           try {
-            const legacyParams = new URLSearchParams();
-            if (artistQ) legacyParams.set("artist", artistQ);
-            if (titleQ) legacyParams.set("title", titleQ);
-            const legacyRes = await fetch(`/api/legacy?${legacyParams.toString()}`);
-            const legacyData = await legacyRes.json();
-
-            // Build a quick lookup: key = norm(artist)|||norm(title)
-            const legacyLookup: Record<string, { count: number; discs: string[] }> = {};
-            (legacyData.items || []).forEach((it: any) => {
-              const key = `${norm(it.artist || "")}|||${norm(it.title || "")}`;
-              legacyLookup[key] = { count: it.count || 0, discs: it.discs || [] };
+            // Get unique artist/title combinations from results
+            const uniqueTracks = new Map();
+            json.items.forEach((item: any) => {
+              const key = `${norm(item.artist || "")}|||${norm(item.title || "")}`;
+              if (!uniqueTracks.has(key)) {
+                uniqueTracks.set(key, { artist: item.artist, title: item.title });
+              }
             });
+
+            // Fetch legacy data for each unique track
+            const legacyLookup: Record<string, { count: number; discs: string[] }> = {};
+            for (const [key, track] of uniqueTracks.entries()) {
+              const params = new URLSearchParams({
+                artist: track.artist || "",
+                title: track.title || ""
+              });
+
+              try {
+                const res = await fetch(`/api/legacy?${params.toString()}`);
+                const data = await res.json();
+                if (data.items && data.items.length > 0) {
+                  // Sum up all matching items (handles title variations)
+                  const totalCount = data.items.reduce((sum: number, item: any) => sum + (item.count || 0), 0);
+                  const allDiscs = data.items.flatMap((item: any) => item.discs || []);
+
+                  legacyLookup[key] = {
+                    count: totalCount,
+                    discs: allDiscs
+                  };
+                }
+              } catch (error) {
+                console.error("Legacy fetch error:", error);
+              }
+            }
 
 
             setLegacyMap(legacyLookup);
@@ -785,7 +807,7 @@ export default function Page() {
         title={legacyDialog.title}
         discs={legacyDialog.discs}
       />
-      
+
       <AdminSection />
     </main>
 
