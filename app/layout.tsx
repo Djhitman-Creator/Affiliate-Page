@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             {children}
 
             <footer className="mt-10 text-center text-xs text-neutral-500 dark:text-white/50">
-              Built for Karaoke Houston • Next.js + Tailwind + Prisma
+              © Rush Monkey Gaming
             </footer>
           </div>
         </Providers>

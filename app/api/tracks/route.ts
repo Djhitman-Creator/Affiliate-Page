@@ -21,12 +21,38 @@ async function getLegacyData(artist: string, title: string) {
       trim: true
     });
 
-    // Find matching records
+    // Normalize search terms - remove special characters and extra spaces
+    const normalizeString = (str: string) => {
+      return str.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '') // Remove special chars
+        .replace(/\s+/g, ' ')         // Multiple spaces to single
+        .trim();
+    };
+
+    const searchArtist = normalizeString(artist);
+    const searchTitle = normalizeString(title);
+
+    // Find matching records with more flexible matching
     const matches = records.filter((record: any) => {
-      const matchArtist = record.ARTIST?.toLowerCase().includes(artist.toLowerCase());
-      const matchTitle = record.SONG?.toLowerCase().includes(title.toLowerCase());
+      const recordArtist = normalizeString(record.ARTIST || '');
+      const recordSong = normalizeString(record.SONG || '');
+
+      // Check both ways - record contains search OR search contains record
+      const matchArtist = recordArtist.includes(searchArtist) ||
+        searchArtist.includes(recordArtist) ||
+        recordArtist === searchArtist;
+
+      const matchTitle = recordSong.includes(searchTitle) ||
+        searchTitle.includes(recordSong) ||
+        recordSong === searchTitle;
+
       return matchArtist && matchTitle;
     });
+
+    // Debug logging - remove after testing
+    if (matches.length > 0 && artist.toLowerCase().includes("george")) {
+      console.log(`Legacy matches for "${artist}" - "${title}": ${matches.length}`);
+    }
 
     if (matches.length === 0) return null;
 
@@ -36,6 +62,7 @@ async function getLegacyData(artist: string, title: string) {
       records: matches.slice(0, 20) // Limit to 20 for performance
     };
   } catch (error) {
+    console.error("Legacy data error:", error);
     return null; // Silently fail - don't break main search
   }
 }
