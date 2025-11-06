@@ -1,0 +1,37 @@
+KV_DISABLED false
+
+DIRECT_URL postgresql://neondb_owner:npg_nIJMZitk8Es2@ep-weathered-pine-a4chgv2q.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
+NEXT_PUBLIC_APP_ENV production
+
+DATABASE_URL postgresql://neondb_owner:npg_nIJMZitk8Es2@ep-weathered-pine-a4chgv2q-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+DB_PROVIDER postgresql
+
+YOUTUBE_CACHE_TTL_HOURS 12
+
+YT_INDEX_MAX 400
+
+YT_WARM_DAILY_CHANNELS 5
+
+KV_API_BASE https://www.karaoke-version.com/api
+
+KV_SEARCH_ENDPOINT https://www.karaoke-version.com/api/search
+
+YT_WARM_SECRET Vaderstormy01!
+
+NODE_ENV production
+
+YOUTUBE_API_KEY AIzaSyCuuyG9syHQxHJ_a7Uvj4PpzOjlQ6wIq2Q
+
+YOUTUBE_MAX_CHANNELS 8
+
+PARTYTYME_MERCHANT 105
+
+PARTYTYME_ZIP_URL https://www.partytyme.net/songshop/xml/karaokehouston_partytymenet.zip
+
+PARTYTYME_CSV_URL https://www.partytyme.net/songshop/csv/karaokehouston.csv
+
+KV_AFFILIATE_ID 1048
+
+NEXT_PUBLIC_SITE_URL https://karaokehouston.com

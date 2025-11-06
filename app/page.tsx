@@ -520,9 +520,13 @@ export default function Page() {
           (artistQ + ' ' + titleQ).trim()
         )}&sortBy=${sortBy}&sortDir=${sortDir}&page=${page}&pageSize=${PAGE_SIZE}`;
 
+        console.log('Fetching URL:', url);
         const res = await fetch(url, { cache: 'no-store' });
+        console.log('Response status:', res.status);
+        
         setSearchProgress('Processing search results...');
         const json = await res.json();
+        console.log('Response data:', json);
 
         if (!cancelled && my === reqId.current) {
           const aTokens = norm(artistQ).split(' ').filter(Boolean);
@@ -576,7 +580,9 @@ export default function Page() {
           console.log('Data set complete');
 
           // 4) Fetch legacy tracks for the current artist/title search (if enabled)
+          console.log('Legacy checkbox state:', searchLegacy);
           if (searchLegacy) {
+            console.log('Legacy search RUNNING because checkbox is checked');
             try {
               setSearchProgress('Checking legacy disc database...');
 
