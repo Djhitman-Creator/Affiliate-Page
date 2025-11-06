@@ -267,16 +267,8 @@ export async function GET(req: Request) {
     return sortDir === "desc" ? -compareValue : compareValue;
   });
 
-  // Add legacy data to each result
-  const resultsWithLegacy = await Promise.all(
-    results.map(async (track) => {
-      const legacyData = await getLegacyData(track.artist || "", track.title || "");
-      return {
-        ...track,
-        legacy: legacyData
-      };
-    })
-  );
+  // Legacy data disabled in API to prevent memory issues
+  const resultsWithLegacy = results;
 
   return NextResponse.json({ items: resultsWithLegacy, total: resultsWithLegacy.length });
   } catch (error: any) {
