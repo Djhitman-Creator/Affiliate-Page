@@ -1,6 +1,8 @@
 import './globals.css'
 import type { ReactNode } from 'react'
 import Providers from './providers'
+import HeaderModals from "@/components/HeaderModals"
+import { ThemeToggle } from "@/components/ThemeToggle"
 
 export const metadata = {
   title: 'KaraTrack+ – Modern Karaoke Affiliate Search',
@@ -26,6 +28,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   <h1 className="text-xl font-semibold text-white">KaraTrack+</h1>
                   <p className="text-xs text-white/70 -mt-1">Modern Karaoke Search Engine</p>
                 </div>
+              </div>
+
+              {/* Right side of header with Help, TOS, and Theme Toggle */}
+              <div className="flex items-center gap-3">
+                <HeaderModals />
+                <ThemeToggle />
               </div>
             </header>
 
