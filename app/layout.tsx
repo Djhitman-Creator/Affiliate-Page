@@ -17,7 +17,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             {/* Top header: keep text white in BOTH themes for contrast */}
             <header className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl glass grid place-items-center text-xl">🎤</div>
+                <img
+                  src="/karatrack-logo.png"
+                  alt="KaraTrack+ Logo"
+                  className="w-10 h-10 rounded-2xl object-contain"
+                />
                 <div>
                   <h1 className="text-xl font-semibold text-white">KaraTrack+</h1>
                   <p className="text-xs text-white/70 -mt-1">Modern Karaoke Search Engine</p>
@@ -28,7 +32,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             {children}
 
             <footer className="mt-10 text-center text-xs text-neutral-500 dark:text-white/50">
-              © Rush Monkey Gaming
+              © Rush Monkey Gaming LLC
             </footer>
           </div>
         </Providers>
