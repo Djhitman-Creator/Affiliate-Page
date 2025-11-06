@@ -95,9 +95,12 @@ function sanitize(s: any): string {
 }
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const baseUrl = `${url.protocol}//${url.host}`;
-  const rawQ = sanitize(url.searchParams.get("q"));
+  try {
+    console.log('Track API called');
+    const url = new URL(req.url);
+    const baseUrl = `${url.protocol}//${url.host}`;
+    const rawQ = sanitize(url.searchParams.get("q"));
+    console.log('Query:', rawQ);
 
   // Get sorting parameters
   const sortBy = url.searchParams.get("sortBy") || "title"; // "title" or "artist"
@@ -275,12 +278,16 @@ export async function GET(req: Request) {
     })
   );
 
-  return NextResponse.json({
-    items: resultsWithLegacy,
-    total: results.length,
-    errors,
-    debug,
-    parsed: { q, artistPart, titlePart, tokens },
-    sorting: { sortBy, sortDir }
-  });
+  return NextResponse.json({ items: resultsWithLegacy, total: resultsWithLegacy.length });
+  } catch (error: any) {
+    console.error('Track API Error Details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    return NextResponse.json(
+      { error: 'Internal server error', message: error.message },
+      { status: 500 }
+    );
+  }
 }
