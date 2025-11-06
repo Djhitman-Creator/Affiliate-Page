@@ -197,6 +197,420 @@ function SearchLoadingOverlay({ isSearching, searchProgress }: { isSearching: bo
   );
 }
 
+/* ---------- Legacy Dialog Component (moved outside) ---------- */
+interface LegacyDialogProps {
+  open: boolean;
+  onClose: () => void;
+  artist: string;
+  title: string;
+  discs: string[];
+  buttonRect?: DOMRect;
+}
+
+function LegacyDialog({ open, onClose, artist, title, discs, buttonRect }: LegacyDialogProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (open && buttonRect) {
+      // Calculate position next to the button
+      let posX = buttonRect.left + buttonRect.width + 10; // 10px to the right
+      let posY = buttonRect.top + window.scrollY; // Align with button top
+
+      // Estimate dialog dimensions
+      const dialogWidth = 400;
+      const dialogHeight = 350;
+
+      // Get viewport dimensions
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // If dialog would go off right edge, show it on the left side of button
+      if (posX + dialogWidth > viewportWidth - 20) {
+        posX = buttonRect.left - dialogWidth - 10;
+      }
+
+      // If dialog would go off bottom, adjust upward
+      if (posY + dialogHeight > window.scrollY + viewportHeight - 20) {
+        posY = Math.max(window.scrollY + 20, window.scrollY + viewportHeight - dialogHeight - 20);
+      }
+
+      // Ensure minimum distance from edges
+      if (posX < 20) posX = 20;
+      if (posY < window.scrollY + 20) posY = window.scrollY + 20;
+
+      setPosition({ top: posY, left: posX });
+    }
+  }, [open, buttonRect]);
+
+  if (!open) return null;
+
+  // If we have button position, use absolute positioning
+  if (buttonRect) {
+    return (
+      <>
+        {/* Backdrop */}
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
+
+        {/* Dialog positioned next to button */}
+        <div
+          ref={dialogRef}
+          className="absolute z-50 w-full max-w-lg rounded-2xl p-5 bg-white text-black dark:bg-neutral-900 dark:text-white shadow-xl"
+          style={{
+            position: 'absolute',
+            top: `${position.top}px`,
+            left: `${position.left}px`,
+            width: '400px'
+          }}
+        >
+          <div className="text-lg font-semibold mb-2">
+            Legacy discs — {artist} — {title}
+          </div>
+          <div className="max-h-64 overflow-auto rounded border border-black/10 dark:border-white/10 p-3 text-sm leading-6">
+            {discs.length === 0 ? (
+              <div className="opacity-70">No legacy discs found.</div>
+            ) : (
+              <ul className="list-disc pl-5">
+                {discs.map((d: string, i: number) => <li key={i}>{d}</li>)}
+              </ul>
+            )}
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              className="rounded-xl px-4 py-2 bg-black text-white dark:bg-white dark:text-black"
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Fallback to original centered version if no button position
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg rounded-2xl p-5 bg-white text-black dark:bg-neutral-900 dark:text-white shadow-xl">
+        <div className="text-lg font-semibold mb-2">
+          Legacy discs — {artist} — {title}
+        </div>
+        <div className="max-h-64 overflow-auto rounded border border-black/10 dark:border-white/10 p-3 text-sm leading-6">
+          {discs.length === 0 ? (
+            <div className="opacity-70">No legacy discs found.</div>
+          ) : (
+            <ul className="list-disc pl-5">
+              {discs.map((d: string, i: number) => <li key={i}>{d}</li>)}
+            </ul>
+          )}
+        </div>
+        <div className="mt-4 flex justify-end">
+          <button
+            className="rounded-xl px-4 py-2 bg-black text-white dark:bg-white dark:text-black"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Admin Section Component (moved outside) ---------- */
+interface AdminSectionProps {
+  isUnlocked: boolean;
+  setIsUnlocked: (value: boolean) => void;
+}
+
+function AdminSection({ isUnlocked, setIsUnlocked }: AdminSectionProps) {
+  const [password, setPassword] = useState('');
+
+  const handleUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === 'Powder01!') {
+      setIsUnlocked(true);
+      setPassword('');
+    } else {
+      alert('Incorrect password');
+      setPassword('');
+    }
+  };
+
+  if (!isUnlocked) {
+    return (
+      <div className="mt-12 border-t border-white/10 pt-6">
+        <form onSubmit={handleUnlock} className="flex items-center gap-2">
+          <input
+            type="password"
+            placeholder="Admin password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="rounded-lg bg-white/10 px-3 py-1 text-sm text-white placeholder:text-white/40 focus:bg-white/20 focus:outline-none"
+          />
+          <button type="submit" className="rounded-lg bg-white/10 px-4 py-1 text-sm text-white hover:bg-white/20">
+            Unlock Admin
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-12 border-t border-white/10 pt-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-white/70">Admin Controls</h3>
+        <button onClick={() => setIsUnlocked(false)} className="text-xs text-white/40 hover:text-white/60">
+          Lock
+        </button>
+      </div>
+
+      {/* Signup Downloads Section */}
+      <div className="mt-4 border-t border-white/10 pt-4">
+        <h4 className="font-semibold mb-3 text-white">Newsletter Signups</h4>
+        <div className="flex gap-4 flex-wrap">
+          <button
+            onClick={async () => {
+              try {
+                const response = await fetch('/api/signup?format=csv');
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `signups_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+              } catch (error) {
+                console.error('Download error:', error);
+              }
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            Download CSV
+          </button>
+
+          <button
+            onClick={async () => {
+              try {
+                const response = await fetch('/api/signup?format=json');
+                const data = await response.json();
+                alert(`Total signups: ${data.count || 0}`);
+              } catch (error) {
+                console.error('Count error:', error);
+              }
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            View Count
+          </button>
+        </div>
+      </div>
+
+      {/* Original Admin Links */}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <a href="/admin" className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
+          Admin Panel
+        </a>
+        <a href="https://karaokehouston.com" target="_blank" rel="noopener noreferrer" className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
+          Karaoke Houston
+        </a>
+        <button onClick={() => window.location.href = '/api/admin/track-count'} className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
+          Track Count
+        </button>
+        <button onClick={() => window.location.href = '/api/admin/check-db'} className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
+          Check DB
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Signup Modal Component (FIXED VERSION) ---------- */
+interface SignupModalProps {
+  showSignupModal: boolean;
+  setShowSignupModal: (value: boolean) => void;
+  signupName: string;
+  setSignupName: (value: string) => void;
+  signupEmail: string;
+  setSignupEmail: (value: string) => void;
+  signupPhone: string;
+  setSignupPhone: (value: string) => void;
+  signupSubmitting: boolean;
+  setSignupSubmitting: (value: boolean) => void;
+  signupSuccess: boolean;
+  setSignupSuccess: (value: boolean) => void;
+}
+
+function SignupModal({
+  showSignupModal,
+  setShowSignupModal,
+  signupName,
+  setSignupName,
+  signupEmail,
+  setSignupEmail,
+  signupPhone,
+  setSignupPhone,
+  signupSubmitting,
+  setSignupSubmitting,
+  signupSuccess,
+  setSignupSuccess
+}: SignupModalProps) {
+  if (!showSignupModal) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignupSubmitting(true);
+
+    try {
+      const response = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: signupName,
+          email: signupEmail,
+          phone: signupPhone,
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      if (response.ok) {
+        setSignupSuccess(true);
+        // Keep modal open longer to show success message
+        setTimeout(() => {
+          setShowSignupModal(false);
+          setSignupSuccess(false);
+          setSignupName('');
+          setSignupEmail('');
+          setSignupPhone('');
+        }, 3000); // Increased from 2000 to 3000ms
+      } else {
+        // Handle error
+        alert('There was an error submitting your signup. Please try again.');
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      alert('There was an error submitting your signup. Please try again.');
+    } finally {
+      setSignupSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            🎉 Be First to Know!
+          </h2>
+          <button
+            onClick={() => setShowSignupModal(false)}
+            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {signupSuccess ? (
+          <div className="text-center py-8">
+            <div className="text-green-500 text-6xl mb-4 animate-bounce">✓</div>
+            <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              Thank you for signing up!
+            </p>
+            <p className="text-gray-600 dark:text-gray-400">
+              We'll notify you first when the big news drops!
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-500 mt-4">
+              This window will close automatically...
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={signupName}
+                onChange={(e) => setSignupName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                         bg-white dark:bg-gray-700 
+                         text-gray-900 dark:text-white 
+                         placeholder-gray-400 dark:placeholder-gray-500
+                         focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="John Doe"
+                disabled={signupSubmitting}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Email *
+              </label>
+              <input
+                type="email"
+                required
+                value={signupEmail}
+                onChange={(e) => setSignupEmail(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                         bg-white dark:bg-gray-700 
+                         text-gray-900 dark:text-white 
+                         placeholder-gray-400 dark:placeholder-gray-500
+                         focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="john@example.com"
+                disabled={signupSubmitting}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Phone (Optional)
+              </label>
+              <input
+                type="tel"
+                value={signupPhone}
+                onChange={(e) => setSignupPhone(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                         bg-white dark:bg-gray-700 
+                         text-gray-900 dark:text-white 
+                         placeholder-gray-400 dark:placeholder-gray-500
+                         focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="555-123-4567"
+                disabled={signupSubmitting}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={signupSubmitting}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 
+                       rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed
+                       flex items-center justify-center"
+            >
+              {signupSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Submitting...
+                </>
+              ) : (
+                'Sign Me Up!'
+              )}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
 
 /* ---------- page ---------- */
 export default function Page() {
@@ -251,227 +665,11 @@ export default function Page() {
   const [ytHits, setYtHits] = useState<YTHit[]>([]);
   const [ytDebug, setYtDebug] = useState<any[]>([]);
 
+  // Admin state
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
+
   // simple key to trigger fetch sequence order
   const reqId = useRef(0);
-
-
-
-  /* ---------- Legacy dialog component - INSIDE Page function ---------- */
-  const LegacyDialog = ({ open, onClose, artist, title, discs, buttonRect }: any) => {
-    const dialogRef = useRef<HTMLDivElement>(null);
-    const [position, setPosition] = useState({ top: 0, left: 0 });
-
-    useEffect(() => {
-      if (open && buttonRect) {
-        // Calculate position next to the button
-        let posX = buttonRect.left + buttonRect.width + 10; // 10px to the right
-        let posY = buttonRect.top + window.scrollY; // Align with button top
-
-        // Estimate dialog dimensions
-        const dialogWidth = 400;
-        const dialogHeight = 350;
-
-        // Get viewport dimensions
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-
-        // If dialog would go off right edge, show it on the left side of button
-        if (posX + dialogWidth > viewportWidth - 20) {
-          posX = buttonRect.left - dialogWidth - 10;
-        }
-
-        // If dialog would go off bottom, adjust upward
-        if (posY + dialogHeight > window.scrollY + viewportHeight - 20) {
-          posY = Math.max(window.scrollY + 20, window.scrollY + viewportHeight - dialogHeight - 20);
-        }
-
-        // Ensure minimum distance from edges
-        if (posX < 20) posX = 20;
-        if (posY < window.scrollY + 20) posY = window.scrollY + 20;
-
-        setPosition({ top: posY, left: posX });
-      }
-    }, [open, buttonRect]);
-
-    if (!open) return null;
-
-    // If we have button position, use absolute positioning
-    if (buttonRect) {
-      return (
-        <>
-          {/* Backdrop */}
-          <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
-
-          {/* Dialog positioned next to button */}
-          <div
-            ref={dialogRef}
-            className="absolute z-50 w-full max-w-lg rounded-2xl p-5 bg-white text-black dark:bg-neutral-900 dark:text-white shadow-xl"
-            style={{
-              position: 'absolute',
-              top: `${position.top}px`,
-              left: `${position.left}px`,
-              width: '400px'
-            }}
-          >
-            <div className="text-lg font-semibold mb-2">
-              Legacy discs — {artist} — {title}
-            </div>
-            <div className="max-h-64 overflow-auto rounded border border-black/10 dark:border-white/10 p-3 text-sm leading-6">
-              {discs.length === 0 ? (
-                <div className="opacity-70">No legacy discs found.</div>
-              ) : (
-                <ul className="list-disc pl-5">
-                  {discs.map((d: string, i: number) => <li key={i}>{d}</li>)}
-                </ul>
-              )}
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                className="rounded-xl px-4 py-2 bg-black text-white dark:bg-white dark:text-black"
-                onClick={onClose}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </>
-      );
-    }
-
-    // Fallback to original centered version if no button position
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-        <div className="relative z-10 w-full max-w-lg rounded-2xl p-5 bg-white text-black dark:bg-neutral-900 dark:text-white shadow-xl">
-          <div className="text-lg font-semibold mb-2">
-            Legacy discs — {artist} — {title}
-          </div>
-          <div className="max-h-64 overflow-auto rounded border border-black/10 dark:border-white/10 p-3 text-sm leading-6">
-            {discs.length === 0 ? (
-              <div className="opacity-70">No legacy discs found.</div>
-            ) : (
-              <ul className="list-disc pl-5">
-                {discs.map((d: string, i: number) => <li key={i}>{d}</li>)}
-              </ul>
-            )}
-          </div>
-          <div className="mt-4 flex justify-end">
-            <button
-              className="rounded-xl px-4 py-2 bg-black text-white dark:bg-white dark:text-black"
-              onClick={onClose}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-
-
-  // Admin Section Component - INSIDE Page function
-  function AdminSection() {
-    const [isUnlocked, setIsUnlocked] = useState(false);
-    const [password, setPassword] = useState('');
-
-    const handleUnlock = (e: React.FormEvent) => {
-      e.preventDefault();
-      if (password === 'Powder01!') {
-        setIsUnlocked(true);
-        setPassword('');
-      } else {
-        alert('Incorrect password');
-        setPassword('');
-      }
-    };
-
-    if (!isUnlocked) {
-      return (
-        <div className="mt-12 border-t border-white/10 pt-6">
-          <form onSubmit={handleUnlock} className="flex items-center gap-2">
-            <input
-              type="password"
-              placeholder="Admin password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="rounded-lg bg-white/10 px-3 py-1 text-sm text-white placeholder:text-white/40 focus:bg-white/20 focus:outline-none"
-            />
-            <button type="submit" className="rounded-lg bg-white/10 px-4 py-1 text-sm text-white hover:bg-white/20">
-              Unlock Admin
-            </button>
-          </form>
-        </div>
-      );
-    }
-
-    return (
-      <div className="mt-12 border-t border-white/10 pt-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-white/70">Admin Controls</h3>
-          <button onClick={() => setIsUnlocked(false)} className="text-xs text-white/40 hover:text-white/60">
-            Lock
-          </button>
-        </div>
-
-        {/* Signup Downloads Section */}
-        <div className="mt-4 border-t border-white/10 pt-4">
-          <h4 className="font-semibold mb-3 text-white">Newsletter Signups</h4>
-          <div className="flex gap-4 flex-wrap">
-            <button
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/signup?format=csv');
-                  const blob = await response.blob();
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `signups_${new Date().toISOString().split('T')[0]}.csv`;
-                  a.click();
-                } catch (error) {
-                  console.error('Download error:', error);
-                }
-              }}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              Download CSV
-            </button>
-
-            <button
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/signup?format=json');
-                  const data = await response.json();
-                  alert(`Total signups: ${data.count || 0}`);
-                } catch (error) {
-                  console.error('Count error:', error);
-                }
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              View Count
-            </button>
-          </div>
-        </div>
-
-        {/* Original Admin Links */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          <a href="/admin" className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
-            Admin Panel
-          </a>
-          <a href="https://karaokehouston.com" target="_blank" rel="noopener noreferrer" className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
-            Karaoke Houston
-          </a>
-          <button onClick={() => window.location.href = '/api/admin/track-count'} className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
-            Track Count
-          </button>
-          <button onClick={() => window.location.href = '/api/admin/check-db'} className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20">
-            Check DB
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // submit handler: commit inputs → queries, reset page
   function onSubmit(e: React.FormEvent) {
@@ -481,7 +679,6 @@ export default function Page() {
     setTitleQ(titleInput);
     setPage(1);
   }
-
 
   // stable row key
   function rowKey(t: Row, idx: number) {
@@ -523,7 +720,7 @@ export default function Page() {
         console.log('Fetching URL:', url);
         const res = await fetch(url, { cache: 'no-store' });
         console.log('Response status:', res.status);
-        
+
         setSearchProgress('Processing search results...');
         const json = await res.json();
         console.log('Response data:', json);
@@ -620,7 +817,6 @@ export default function Page() {
                   console.error("Legacy fetch error:", error);
                 }
               }
-
 
               setLegacyMap(legacyLookup);
             } catch (err) {
@@ -736,127 +932,6 @@ export default function Page() {
       cancelled = true;
     };
   }, [artistQ, titleQ, data.total]);
-
-  // Signup Modal Component - INSIDE Page function
-  const SignupModal = () => {
-    if (!showSignupModal) return null;
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setSignupSubmitting(true);
-
-      try {
-        const response = await fetch('/api/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: signupName,
-            email: signupEmail,
-            phone: signupPhone,
-            timestamp: new Date().toISOString()
-          })
-        });
-
-        if (response.ok) {
-          setSignupSuccess(true);
-          setTimeout(() => {
-            setShowSignupModal(false);
-            setSignupSuccess(false);
-            setSignupName('');
-            setSignupEmail('');
-            setSignupPhone('');
-          }, 2000);
-        }
-      } catch (error) {
-        console.error('Signup error:', error);
-      } finally {
-        setSignupSubmitting(false);
-      }
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              🎉 Be First to Know!
-            </h2>
-            <button
-              onClick={() => setShowSignupModal(false)}
-              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          {signupSuccess ? (
-            <div className="text-center py-8">
-              <div className="text-green-500 text-5xl mb-4">✓</div>
-              <p className="text-lg font-medium">Thank you for signing up!</p>
-              <p className="text-gray-600 dark:text-gray-400">We'll notify you first when the big news drops!</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={signupName}
-                  onChange={(e) => setSignupName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                           dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  placeholder="John Doe"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                           dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  placeholder="john@example.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Phone (Optional)
-                </label>
-                <input
-                  type="tel"
-                  value={signupPhone}
-                  onChange={(e) => setSignupPhone(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                           dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  placeholder="555-123-4567"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={signupSubmitting}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 
-                         rounded-lg transition-colors disabled:bg-gray-400"
-              >
-                {signupSubmitting ? 'Signing Up...' : 'Sign Me Up!'}
-              </button>
-            </form>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   /* ---------- render ---------- */
   return (
@@ -1148,8 +1223,8 @@ export default function Page() {
           </div>
         )}
 
-        {/* Admin Section */}
-        <AdminSection />
+        {/* Admin Section - Now using props */}
+        <AdminSection isUnlocked={isAdminUnlocked} setIsUnlocked={setIsAdminUnlocked} />
 
         {/* Spacer to push content above banner */}
         <div className="h-32"></div>
@@ -1167,8 +1242,21 @@ export default function Page() {
         buttonRect={legacyDialog.buttonRect}
       />
 
-      {/* Signup Modal */}
-      <SignupModal />
+      {/* Signup Modal - Now using props */}
+      <SignupModal
+        showSignupModal={showSignupModal}
+        setShowSignupModal={setShowSignupModal}
+        signupName={signupName}
+        setSignupName={setSignupName}
+        signupEmail={signupEmail}
+        setSignupEmail={setSignupEmail}
+        signupPhone={signupPhone}
+        setSignupPhone={setSignupPhone}
+        signupSubmitting={signupSubmitting}
+        setSignupSubmitting={setSignupSubmitting}
+        signupSuccess={signupSuccess}
+        setSignupSuccess={setSignupSuccess}
+      />
     </>
   );
 }
