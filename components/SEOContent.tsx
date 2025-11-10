@@ -8,12 +8,12 @@ export default function SEOContent() {
         <h2 className="text-3xl font-bold text-white mb-6">
           Professional Karaoke Downloads from Trusted Sources
         </h2>
-        
+
         <div className="prose prose-lg max-w-none text-white/90 space-y-4">
-          <p>
-            <strong>KaraTrack+</strong> is your ultimate karaoke search engine, providing instant access to over <strong>100,000 professional karaoke tracks</strong> from industry leaders Party Tyme Karaoke and Karaoke Version. Our database updates daily with the latest releases, ensuring you always find the newest karaoke songs to download.
+          <p className="!text-white [color:#fff]">
+            <strong className="!text-white">KaraTrack+</strong> is your ultimate karaoke search engine, providing instant access to over <strong className="!text-white">100,000 professional karaoke tracks</strong> from industry leaders Party Tyme Karaoke and Karaoke Version. Our database updates daily with the latest releases, ensuring you always find the newest karaoke songs to download.
           </p>
-          
+
           <div className="grid md:grid-cols-2 gap-6 my-8">
             <div className="bg-white/5 rounded-xl p-6">
               <h3 className="text-xl font-semibold text-white mb-4">
@@ -46,7 +46,7 @@ export default function SEOContent() {
                 </li>
               </ul>
             </div>
-            
+
             <div className="bg-white/5 rounded-xl p-6">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Karaoke File Formats Explained
@@ -126,7 +126,7 @@ export default function SEOContent() {
               Search for your desired song using the Artist and Title fields, then click the "View/Buy" button to visit the manufacturer's site (Party Tyme or Karaoke Version) where you can purchase and download the track in your preferred format.
             </p>
           </details>
-          
+
           <details className="bg-white/5 rounded-lg p-4 cursor-pointer">
             <summary className="font-semibold text-white">
               What's the difference between Party Tyme and Karaoke Version?
@@ -135,7 +135,7 @@ export default function SEOContent() {
               Party Tyme requires you to select your format before purchase, while Karaoke Version allows you to choose and download multiple formats after purchasing. Both offer professional-quality karaoke tracks with synchronized lyrics.
             </p>
           </details>
-          
+
           <details className="bg-white/5 rounded-lg p-4 cursor-pointer">
             <summary className="font-semibold text-white">
               Can I use these karaoke tracks for public performances?
@@ -144,7 +144,7 @@ export default function SEOContent() {
               You must check with each manufacturer for public performance rights. Some tracks may require additional licensing for commercial use. YouTube tracks are for reference only and should not be used for public performances.
             </p>
           </details>
-          
+
           <details className="bg-white/5 rounded-lg p-4 cursor-pointer">
             <summary className="font-semibold text-white">
               How often is the KaraTrack+ database updated?
