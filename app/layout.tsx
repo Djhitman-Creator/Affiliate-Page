@@ -2,12 +2,42 @@ import './globals.css'
 import type { ReactNode } from 'react'
 import Providers from './providers'
 import HeaderModals from "@/components/HeaderModals"
+import StructuredData from '@/components/StructuredData'
 import { ThemeToggle } from "@/components/ThemeToggle"
 
 export const metadata = {
-  title: 'KaraTrack+ – Modern Karaoke Affiliate Search',
-  description:
-    'Search-as-you-type across Party Tyme and Karaoke Version with sortable columns and YouTube karaoke links.',
+  title: 'KaraTrack+ | Download Over 100,000 Karaoke Songs | Party Tyme & Karaoke Version',
+  description: 'Search and download professional karaoke tracks instantly. Over 100,000 songs from Party Tyme Karaoke and Karaoke Version. MP3, MP4, KFN formats. Updated daily with new releases.',
+  keywords: 'karaoke downloads, karaoke tracks, karaoke songs, party tyme karaoke, karaoke version, backing tracks, karaoke mp3, download karaoke, professional karaoke, karaoke with lyrics',
+  authors: [{ name: 'Rush Monkey Gaming LLC' }],
+  creator: 'KaraTrack+',
+  publisher: 'Rush Monkey Gaming LLC',
+  openGraph: {
+    title: 'KaraTrack+ | Professional Karaoke Downloads',
+    description: 'Search over 100,000 karaoke tracks from Party Tyme & Karaoke Version. Download MP3, MP4, KFN formats instantly.',
+    url: 'https://affiliate-page-7uey.vercel.app',
+    siteName: 'KaraTrack+',
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'KaraTrack+ | Over 100,000 Karaoke Downloads',
+    description: 'Search professional karaoke tracks from Party Tyme & Karaoke Version. Instant downloads in multiple formats.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: 'https://affiliate-page-7uey.vercel.app',
+  },
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

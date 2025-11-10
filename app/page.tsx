@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState, } from 'react';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import SEOContent from '@/components/SEOContent'
 
 type Row = {
   id?: string | number | null;
@@ -956,14 +956,12 @@ export default function Page() {
         </div>
 
         {/* Main content */}
-        <div className="mb-4 flex justify-end">
-          <ThemeToggle />
-        </div>
 
         { }
         <form onSubmit={onSubmit} className="mb-2">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_auto]">
             <LastUpdatedNote className="md:col-span-3" />
+
             <input
               className="input !bg-white !text-black placeholder:text-neutral-500
                        dark:!bg-neutral-900 dark:!text-white dark:placeholder:text-white/40"
@@ -1257,6 +1255,9 @@ export default function Page() {
         signupSuccess={signupSuccess}
         setSignupSuccess={setSignupSuccess}
       />
+
+      {/* SEO Content Section - Added for search engine optimization */}
+      <SEOContent />
     </>
   );
 }
