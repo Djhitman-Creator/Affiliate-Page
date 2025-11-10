@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://affiliate-page-7uey.vercel.app'
+  const baseUrl = 'https://karatrack.com'
   const currentDate = new Date()
 
   // Add your main pages

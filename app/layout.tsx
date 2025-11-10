@@ -15,7 +15,7 @@ export const metadata = {
   openGraph: {
     title: 'KaraTrack+ | Professional Karaoke Downloads',
     description: 'Search over 100,000 karaoke tracks from Party Tyme & Karaoke Version. Download MP3, MP4, KFN formats instantly.',
-    url: 'https://affiliate-page-7uey.vercel.app',
+    url: 'https://karatrack.com',
     siteName: 'KaraTrack+',
     locale: 'en_US',
     type: 'website',
@@ -36,7 +36,7 @@ export const metadata = {
     },
   },
   alternates: {
-    canonical: 'https://affiliate-page-7uey.vercel.app',
+    canonical: 'https://karatrack.com',
   },
 }
 

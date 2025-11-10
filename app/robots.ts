@@ -24,7 +24,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: '/api/',
       },
     ],
-    sitemap: 'https://affiliate-page-7uey.vercel.app/sitemap.xml',
-    host: 'https://affiliate-page-7uey.vercel.app',
+    sitemap: 'https://karatrack.com/sitemap.xml',
+    host: 'https://karatrack.com',
   }
 }

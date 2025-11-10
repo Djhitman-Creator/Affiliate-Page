@@ -4,13 +4,13 @@ export default function StructuredData() {
     "@type": "WebSite",
     "name": "KaraTrack+",
     "alternateName": "KaraTrack Plus",
-    "url": "https://affiliate-page-7uey.vercel.app",
+    "url": "https://karatrack.com",
     "description": "Professional karaoke search engine with over 58,000 tracks from Party Tyme and Karaoke Version",
     "potentialAction": {
       "@type": "SearchAction",
       "target": {
         "@type": "EntryPoint",
-        "urlTemplate": "https://affiliate-page-7uey.vercel.app?q={search_term_string}"
+        "urlTemplate": "https://karatrack.com?q={search_term_string}"
       },
       "query-input": "required name=search_term_string"
     }
@@ -20,8 +20,8 @@ export default function StructuredData() {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "Rush Monkey Gaming LLC",
-    "url": "https://affiliate-page-7uey.vercel.app",
-    "logo": "https://affiliate-page-7uey.vercel.app/karatrack-logo.png",
+    "url": "https://karatrack.com",
+    "logo": "https://karatrack.com/karatrack-logo.png",
     "sameAs": [
       "https://www.facebook.com/karatrackplus"
     ],
@@ -38,7 +38,7 @@ export default function StructuredData() {
     "@type": "WebApplication",
     "name": "KaraTrack+ Karaoke Search",
     "description": "Search and download professional karaoke tracks from Party Tyme and Karaoke Version",
-    "url": "https://affiliate-page-7uey.vercel.app",
+    "url": "https://karatrack.com",
     "applicationCategory": "EntertainmentApplication",
     "applicationSubCategory": "MusicApplication",
     "operatingSystem": "Any",
@@ -118,13 +118,13 @@ export default function StructuredData() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://affiliate-page-7uey.vercel.app"
+        "item": "https://karatrack.com"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Search",
-        "item": "https://affiliate-page-7uey.vercel.app/#search"
+        "item": "https://karatrack.com/#search"
       }
     ]
   }
