@@ -157,13 +157,9 @@ export default function SEOContent() {
       </div>
 
       {/* Trust Signals */}
-      <div className="mt-8 text-center text-white/70 text-sm">
-        <p>
-          Trusted by thousands of karaoke enthusiasts • Updated daily • Secure affiliate partner of Party Tyme & Karaoke Version
-        </p>
-        <p className="mt-2">
-          © 2025 KaraTrack+ by Rush Monkey Gaming LLC • Professional Karaoke Search Engine
-        </p>
+      <div className="text-center text-sm !text-white [color:#fff] space-y-2">
+        <p className="!text-white [color:#fff]">Trusted by thousands of karaoke enthusiasts • Updated daily • Secure affiliate partner of Party Tyme & Karaoke Version</p>
+        <p className="!text-white [color:#fff]">© 2025 KaraTrack+ by Rush Monkey Gaming LLC • Professional Karaoke Search Engine</p>
       </div>
     </section>
   )

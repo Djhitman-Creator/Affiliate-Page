@@ -1221,9 +1221,6 @@ export default function Page() {
           </div>
         )}
 
-        {/* Admin Section - Now using props */}
-        <AdminSection isUnlocked={isAdminUnlocked} setIsUnlocked={setIsAdminUnlocked} />
-
         {/* Spacer to push content above banner */}
         <div className="h-32"></div>
 
@@ -1257,7 +1254,13 @@ export default function Page() {
       />
 
       {/* SEO Content Section - Added for search engine optimization */}
-      <SEOContent />
-    </>
-  );
+<SEOContent />
+
+{/* Admin Section - Moved to bottom */}
+<div className="mt-16 opacity-30 hover:opacity-100 transition-opacity">
+  <AdminSection isUnlocked={isAdminUnlocked} setIsUnlocked={setIsAdminUnlocked} />
+</div>
+
+</>
+);
 }
