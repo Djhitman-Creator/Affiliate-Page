@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Break Timer | KaraTrack+ KJ Tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient-1: #e0e7ff;
+            --bg-gradient-2: #fce7f3;
+            --bg-gradient-3: #dbeafe;
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: rgba(31, 38, 135, 0.15);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-glow: rgba(99, 102, 241, 0.4);
+            --button-bg: rgba(255, 255, 255, 0.5);
+            --button-hover: rgba(255, 255, 255, 0.7);
+            --input-bg: rgba(255, 255, 255, 0.6);
+            --display-bg: rgba(255, 255, 255, 0.35);
+            --card-bg: rgba(255, 255, 255, 0.4);
+            --orb-1: rgba(99, 102, 241, 0.3);
+            --orb-2: rgba(236, 72, 153, 0.25);
+            --orb-3: rgba(34, 211, 238, 0.25);
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient-1: #0f0f23;
+            --bg-gradient-2: #1a1a2e;
+            --bg-gradient-3: #16213e;
+            --glass-bg: rgba(30, 30, 50, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: rgba(0, 0, 0, 0.3);
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --accent-primary: #818cf8;
+            --accent-secondary: #a78bfa;
+            --accent-glow: rgba(129, 140, 248, 0.5);
+            --button-bg: rgba(255, 255, 255, 0.08);
+            --button-hover: rgba(255, 255, 255, 0.15);
+            --input-bg: rgba(255, 255, 255, 0.1);
+            --display-bg: rgba(255, 255, 255, 0.05);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --orb-1: rgba(129, 140, 248, 0.4);
+            --orb-2: rgba(236, 72, 153, 0.3);
+            --orb-3: rgba(34, 211, 238, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            transition: all 0.5s ease;
+        }
+
+        /* Floating Orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            animation: float 20s infinite ease-in-out;
+            z-index: 0;
+        }
+        .orb-1 { width: 400px; height: 400px; background: var(--orb-1); top: -100px; left: -100px; }
+        .orb-2 { width: 350px; height: 350px; background: var(--orb-2); bottom: -50px; right: -50px; animation-delay: -7s; }
+        .orb-3 { width: 300px; height: 300px; background: var(--orb-3); top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -14s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -30px) scale(1.05); }
+            50% { transform: translate(-20px, 20px) scale(0.95); }
+            75% { transform: translate(20px, 10px) scale(1.02); }
+        }
+
+        .container { width: 100%; max-width: 800px; position: relative; z-index: 1; margin-top: 20px; }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .title-icon { font-size: 1.5rem; -webkit-text-fill-color: initial; }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--text-primary); }
+
+        /* Form Sections */
+        .form-section {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title .icon { font-size: 1.1rem; }
+
+        /* Input Styles */
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .text-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Mode Selection */
+        .mode-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 16px 20px;
+            background: var(--button-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 14px;
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .mode-tab:hover {
+            background: var(--button-hover);
+            border-color: var(--accent-primary);
+        }
+
+        .mode-tab.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-color: transparent;
+            color: white;
+        }
+
+        .mode-tab .mode-icon { font-size: 1.5rem; }
+        .mode-tab .mode-label { font-size: 0.85rem; }
+
+        /* Time/Minutes Selection */
+        .time-input {
+            padding: 14px 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .time-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .minutes-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .minute-btn {
+            padding: 12px 20px;
+            background: var(--button-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .minute-btn:hover {
+            background: var(--button-hover);
+            transform: translateY(-2px);
+        }
+
+        .minute-btn.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-color: transparent;
+            color: white;
+        }
+
+        .custom-minutes {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .custom-minutes input {
+            width: 70px;
+            padding: 12px;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .custom-minutes input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        /* Preview Display */
+        .preview-section {
+            background: var(--display-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-section::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        .preview-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .preview-message {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .preview-countdown {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .preview-subtext {
+            font-size: 1rem;
+            color: var(--text-muted);
+        }
+
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 24px;
+            background: var(--button-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn:hover {
+            background: var(--button-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px var(--glass-shadow);
+        }
+
+        .btn:active { transform: translateY(0); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #059669, #10b981);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border: none;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Timer States */
+        .timer-running .preview-section {
+            animation: gentle-pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes gentle-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+            50% { box-shadow: 0 0 30px 10px var(--accent-glow); }
+        }
+
+        /* Theme Toggle */
+        .theme-toggle { position: fixed; top: 20px; right: 20px; z-index: 100; }
+        .theme-btn {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--glass-shadow);
+        }
+        .theme-btn:hover { transform: scale(1.1); }
+        .sun-icon, .moon-icon { position: absolute; transition: all 0.3s ease; }
+        [data-theme="dark"] .sun-icon { opacity: 1; transform: rotate(0deg); }
+        [data-theme="dark"] .moon-icon { opacity: 0; transform: rotate(-90deg); }
+        [data-theme="light"] .sun-icon, :root:not([data-theme]) .sun-icon { opacity: 0; transform: rotate(90deg); }
+        [data-theme="light"] .moon-icon, :root:not([data-theme]) .moon-icon { opacity: 1; transform: rotate(0deg); }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text-primary);
+            color: var(--bg-gradient-1);
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Conditional Display */
+        .show-starting-options, .intermission-options {
+            display: none;
+        }
+
+        .show-starting-options.active, .intermission-options.active {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container { margin-top: 60px; }
+            .glass-card { padding: 20px; }
+            .title { font-size: 1.4rem; }
+            .mode-tabs { flex-direction: column; }
+            .preview-countdown { font-size: 3rem; }
+            .preview-message { font-size: 1.1rem; }
+            .btn-row { flex-direction: column; }
+            .btn { width: 100%; }
+        }
+
+        /* Fullscreen Display Mode */
+        .fullscreen-display {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%);
+            z-index: 200;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .fullscreen-display.active {
+            display: flex;
+        }
+
+        .fullscreen-display .fs-message {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5vw;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.4;
+            margin-bottom: 40px;
+            max-width: 90%;
+        }
+
+        .fullscreen-display .fs-countdown {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15vw;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 20px;
+        }
+
+        .fullscreen-display .fs-subtext {
+            font-size: 2vw;
+            color: var(--text-muted);
+        }
+
+        .fullscreen-display .fs-hint {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+            z-index: 210;
+        }
+
+        .fullscreen-display .fs-close:hover {
+            background: var(--button-hover);
+            transform: scale(1.1);
+        }
+
+        /* Logo in fullscreen */
+        .fullscreen-display .fs-logo {
+            position: absolute;
+            bottom: 30px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body onload="init()">
+    <!-- Floating Orbs -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <!-- Theme Toggle -->
+    <div class="theme-toggle">
+        <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+            <span class="sun-icon">☀️</span>
+            <span class="moon-icon">🌙</span>
+        </button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <div class="glass-card">
+            <div class="header">
+                <div class="title">
+                    <span class="title-icon">⏱️</span>
+                    Break Timer
+                </div>
+                <a href="/tools/index.html" class="back-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                    Back to KJ Tools
+                </a>
+            </div>
+
+            <!-- Host Name Section -->
+            <div class="form-section">
+                <div class="section-title">
+                    <span class="icon">🎤</span>
+                    Host Information
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Your DJ / Host Name</label>
+                    <input type="text" id="hostName" class="text-input" placeholder="DJ Awesome" oninput="updatePreview(); saveSettings();">
+                </div>
+            </div>
+
+            <!-- Mode Selection -->
+            <div class="form-section">
+                <div class="section-title">
+                    <span class="icon">🎯</span>
+                    Timer Mode
+                </div>
+                <div class="mode-tabs">
+                    <button class="mode-tab active" id="modeShowStarting" onclick="setMode('showStarting')">
+                        <span class="mode-icon">🎬</span>
+                        <span class="mode-label">Show Starting</span>
+                    </button>
+                    <button class="mode-tab" id="modeIntermission" onclick="setMode('intermission')">
+                        <span class="mode-icon">☕</span>
+                        <span class="mode-label">Intermission</span>
+                    </button>
+                </div>
+
+                <!-- Show Starting Options -->
+                <div class="show-starting-options active" id="showStartingOptions">
+                    <div class="input-group">
+                        <label class="input-label">Show Start Time</label>
+                        <input type="time" id="showStartTime" class="time-input" value="21:00" onchange="updatePreview(); saveSettings();">
+                    </div>
+                </div>
+
+                <!-- Intermission Options -->
+                <div class="intermission-options" id="intermissionOptions">
+                    <div class="input-group">
+                        <label class="input-label">Break Duration (minutes)</label>
+                        <div class="minutes-selector">
+                            <button class="minute-btn" onclick="setMinutes(5)">5</button>
+                            <button class="minute-btn" onclick="setMinutes(10)">10</button>
+                            <button class="minute-btn active" onclick="setMinutes(15)">15</button>
+                            <button class="minute-btn" onclick="setMinutes(20)">20</button>
+                            <button class="minute-btn" onclick="setMinutes(30)">30</button>
+                            <div class="custom-minutes">
+                                <input type="number" id="customMinutes" min="1" max="120" placeholder="Custom" oninput="setCustomMinutes()">
+                                <span style="color: var(--text-muted); font-size: 0.9rem;">min</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="preview-section" id="previewSection">
+                <div class="preview-label">Preview</div>
+                <div class="preview-message" id="previewMessage">
+                    Karaoke with DJ Awesome starts at 9:00 PM
+                </div>
+                <div class="preview-countdown" id="previewCountdown">
+                    --:--
+                </div>
+                <div class="preview-subtext" id="previewSubtext">
+                    until showtime
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="btn-row">
+                <button class="btn btn-success" id="startBtn" onclick="startTimer()">
+                    <span>▶️</span>
+                    Start Timer
+                </button>
+                <button class="btn btn-danger" id="stopBtn" onclick="stopTimer()" style="display: none;">
+                    <span>⏹️</span>
+                    Stop Timer
+                </button>
+                <button class="btn btn-primary" onclick="openPopout()">
+                    <span>🖥️</span>
+                    Pop Out Display
+                </button>
+                <button class="btn" onclick="enterFullscreen()">
+                    <span>⛶</span>
+                    Fullscreen
+                </button>
+            </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="glass-card" style="padding: 20px;">
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <span style="font-size: 1.3rem;">💡</span>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                    <strong style="color: var(--accent-primary);">Tips:</strong>
+                    Use <strong>Pop Out Display</strong> to open a separate window you can move to your TV or projector.
+                    Your settings are automatically saved and will be remembered next time you use this tool.
+                    Press <strong>ESC</strong> to exit fullscreen mode.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Display -->
+    <div class="fullscreen-display" id="fullscreenDisplay">
+        <div class="fs-hint">Press ESC to exit</div>
+        <div class="fs-message" id="fsMessage">Karaoke with DJ Awesome starts at 9:00 PM</div>
+        <div class="fs-countdown" id="fsCountdown">--:--</div>
+        <div class="fs-subtext" id="fsSubtext">until showtime</div>
+        <div class="fs-logo">KaraTrack+ KJ Tools</div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">Settings saved!</div>
+
+    <script>
+        // State
+        let currentMode = 'showStarting';
+        let selectedMinutes = 15;
+        let timerInterval = null;
+        let timerEndTime = null;
+        let popoutWindow = null;
+        let isRunning = false;
+
+        // Initialize
+        function init() {
+            loadTheme();
+            loadSettings();
+            updatePreview();
+            
+            // Listen for ESC key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') exitFullscreen();
+            });
+
+            // Update preview every second when running
+            setInterval(() => {
+                if (isRunning) {
+                    updateCountdown();
+                }
+            }, 1000);
+        }
+
+        // Theme
+        function toggleTheme() {
+            const html = document.documentElement;
+            const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('breakTimerTheme', newTheme);
+            
+            // Update popout if open
+            if (popoutWindow && !popoutWindow.closed) {
+                popoutWindow.document.documentElement.setAttribute('data-theme', newTheme);
+            }
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('breakTimerTheme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            } else {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            }
+        }
+
+        // Mode Selection
+        function setMode(mode) {
+            currentMode = mode;
+            
+            // Update tabs
+            document.getElementById('modeShowStarting').classList.toggle('active', mode === 'showStarting');
+            document.getElementById('modeIntermission').classList.toggle('active', mode === 'intermission');
+            
+            // Update options visibility
+            document.getElementById('showStartingOptions').classList.toggle('active', mode === 'showStarting');
+            document.getElementById('intermissionOptions').classList.toggle('active', mode === 'intermission');
+            
+            updatePreview();
+            saveSettings();
+        }
+
+        // Minutes Selection
+        function setMinutes(mins) {
+            selectedMinutes = mins;
+            document.getElementById('customMinutes').value = '';
+            
+            // Update button states
+            document.querySelectorAll('.minute-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.textContent) === mins);
+            });
+            
+            updatePreview();
+            saveSettings();
+        }
+
+        function setCustomMinutes() {
+            const input = document.getElementById('customMinutes');
+            const val = parseInt(input.value);
+            if (val && val > 0 && val <= 120) {
+                selectedMinutes = val;
+                document.querySelectorAll('.minute-btn').forEach(btn => btn.classList.remove('active'));
+                updatePreview();
+                saveSettings();
+            }
+        }
+
+        // Format time
+        function formatTime12(time24) {
+            const [hours, minutes] = time24.split(':');
+            const h = parseInt(hours);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const h12 = h % 12 || 12;
+            return `${h12}:${minutes} ${ampm}`;
+        }
+
+        function formatCountdown(seconds) {
+            if (seconds <= 0) return "00:00";
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            if (mins >= 60) {
+                const hrs = Math.floor(mins / 60);
+                const remainMins = mins % 60;
+                return `${hrs}:${remainMins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Update Preview
+        function updatePreview() {
+            const hostName = document.getElementById('hostName').value || 'Your Host';
+            let message, subtext;
+            
+            if (currentMode === 'showStarting') {
+                const startTime = document.getElementById('showStartTime').value;
+                const timeFormatted = formatTime12(startTime);
+                message = `Karaoke with ${hostName} starts at ${timeFormatted}`;
+                subtext = 'until showtime';
+            } else {
+                message = `Your Host ${hostName} will be back in`;
+                subtext = 'remaining';
+            }
+            
+            document.getElementById('previewMessage').textContent = message;
+            document.getElementById('previewSubtext').textContent = subtext;
+            
+            // Update fullscreen
+            document.getElementById('fsMessage').textContent = message;
+            document.getElementById('fsSubtext').textContent = subtext;
+            
+            if (!isRunning) {
+                const countdownText = currentMode === 'intermission' ? `${selectedMinutes}:00` : '--:--';
+                document.getElementById('previewCountdown').textContent = countdownText;
+                document.getElementById('fsCountdown').textContent = countdownText;
+            }
+            
+            updatePopoutDisplay();
+        }
+
+        // Timer Controls
+        function startTimer() {
+            isRunning = true;
+            
+            if (currentMode === 'showStarting') {
+                const startTime = document.getElementById('showStartTime').value;
+                const [hours, minutes] = startTime.split(':').map(Number);
+                const now = new Date();
+                const target = new Date();
+                target.setHours(hours, minutes, 0, 0);
+                
+                // If time has passed, assume next day
+                if (target <= now) {
+                    target.setDate(target.getDate() + 1);
+                }
+                
+                timerEndTime = target.getTime();
+            } else {
+                timerEndTime = Date.now() + (selectedMinutes * 60 * 1000);
+            }
+            
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'flex';
+            document.getElementById('previewSection').classList.add('timer-running');
+            
+            updateCountdown();
+            showToast('Timer started!');
+        }
+
+        function stopTimer() {
+            isRunning = false;
+            timerEndTime = null;
+            
+            document.getElementById('startBtn').style.display = 'flex';
+            document.getElementById('stopBtn').style.display = 'none';
+            document.getElementById('previewSection').classList.remove('timer-running');
+            
+            updatePreview();
+            showToast('Timer stopped');
+        }
+
+        function updateCountdown() {
+            if (!timerEndTime) return;
+            
+            const remaining = Math.max(0, Math.floor((timerEndTime - Date.now()) / 1000));
+            const formatted = formatCountdown(remaining);
+            
+            document.getElementById('previewCountdown').textContent = formatted;
+            document.getElementById('fsCountdown').textContent = formatted;
+            
+            updatePopoutDisplay();
+            
+            if (remaining <= 0) {
+                stopTimer();
+                showToast('⏰ Time\'s up!');
+            }
+        }
+
+        // Popout Window
+        function openPopout() {
+            const width = 800;
+            const height = 500;
+            
+            // Try to position on secondary monitor (offset to the right)
+            const left = window.screen.width + 50;
+            const top = 50;
+            
+            popoutWindow = window.open('', 'BreakTimerDisplay', 
+                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
+            );
+            
+            if (!popoutWindow) {
+                alert('Please allow popups for this site to use the Pop Out Display feature.');
+                return;
+            }
+            
+            const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+            
+            popoutWindow.document.write(`
+<!DOCTYPE html>
+<html lang="en" data-theme="${theme}">
+<head>
+    <meta charset="UTF-8">
+    <title>Break Timer Display</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient-1: #e0e7ff;
+            --bg-gradient-2: #fce7f3;
+            --bg-gradient-3: #dbeafe;
+            --text-primary: #1e293b;
+            --text-muted: #64748b;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+        }
+        [data-theme="dark"] {
+            --bg-gradient-1: #0f0f23;
+            --bg-gradient-2: #1a1a2e;
+            --bg-gradient-3: #16213e;
+            --text-primary: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent-primary: #818cf8;
+            --accent-secondary: #a78bfa;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+        }
+        .message {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4vw;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.4;
+            margin-bottom: 30px;
+        }
+        .countdown {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18vw;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 20px;
+        }
+        .subtext {
+            font-size: 2.5vw;
+            color: var(--text-muted);
+        }
+        .logo {
+            position: absolute;
+            bottom: 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="message" id="popoutMessage">Loading...</div>
+    <div class="countdown" id="popoutCountdown">--:--</div>
+    <div class="subtext" id="popoutSubtext">please wait</div>
+    <div class="logo">KaraTrack+ KJ Tools</div>
+</body>
+</html>
+            `);
+            popoutWindow.document.close();
+            
+            updatePopoutDisplay();
+            
+            // Monitor if window closes
+            const checkClosed = setInterval(() => {
+                if (popoutWindow.closed) {
+                    clearInterval(checkClosed);
+                    popoutWindow = null;
+                }
+            }, 500);
+            
+            showToast('Display window opened! Drag it to your second screen.');
+        }
+
+        function updatePopoutDisplay() {
+            if (!popoutWindow || popoutWindow.closed) return;
+            
+            try {
+                const msg = document.getElementById('previewMessage').textContent;
+                const countdown = document.getElementById('previewCountdown').textContent;
+                const subtext = document.getElementById('previewSubtext').textContent;
+                
+                const popMsg = popoutWindow.document.getElementById('popoutMessage');
+                const popCount = popoutWindow.document.getElementById('popoutCountdown');
+                const popSub = popoutWindow.document.getElementById('popoutSubtext');
+                
+                if (popMsg) popMsg.textContent = msg;
+                if (popCount) popCount.textContent = countdown;
+                if (popSub) popSub.textContent = subtext;
+            } catch (e) {
+                // Window might be closed or cross-origin
+            }
+        }
+
+        // Fullscreen
+        function enterFullscreen() {
+            document.getElementById('fullscreenDisplay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function exitFullscreen() {
+            document.getElementById('fullscreenDisplay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Settings Persistence
+        function saveSettings() {
+            const settings = {
+                hostName: document.getElementById('hostName').value,
+                mode: currentMode,
+                showStartTime: document.getElementById('showStartTime').value,
+                selectedMinutes: selectedMinutes
+            };
+            localStorage.setItem('breakTimerSettings', JSON.stringify(settings));
+        }
+
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem('breakTimerSettings');
+                if (saved) {
+                    const settings = JSON.parse(saved);
+                    
+                    if (settings.hostName) {
+                        document.getElementById('hostName').value = settings.hostName;
+                    }
+                    if (settings.mode) {
+                        setMode(settings.mode);
+                    }
+                    if (settings.showStartTime) {
+                        document.getElementById('showStartTime').value = settings.showStartTime;
+                    }
+                    if (settings.selectedMinutes) {
+                        setMinutes(settings.selectedMinutes);
+                    }
+                }
+            } catch (e) {
+                console.log('Could not load settings');
+            }
+        }
+
+        // Toast
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+</html>

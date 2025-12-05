@@ -135,6 +135,15 @@
             box-shadow: 0 25px 60px -12px rgba(99, 102, 241, 0.4);
         }
 
+        /* Timer card gradient */
+        .tool-card.timer-card .gradient-border {
+            background: linear-gradient(135deg, #f59e0b, #ef4444, #ec4899);
+        }
+
+        .tool-card.timer-card:hover .gradient-border {
+            box-shadow: 0 25px 60px -12px rgba(245, 158, 11, 0.4);
+        }
+
         .inner-card {
             position: relative;
             background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a);
@@ -170,6 +179,15 @@
             bottom: -40px;
             right: -40px;
             animation-delay: -3s;
+        }
+
+        /* Timer orbs */
+        .timer-card .orb-1 {
+            background: rgba(245, 158, 11, 0.3);
+        }
+
+        .timer-card .orb-2 {
+            background: rgba(239, 68, 68, 0.25);
         }
 
         @keyframes float {
@@ -210,6 +228,12 @@
             gap: 6px;
         }
 
+        .badge-new {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
         .pulse-dot {
             width: 6px;
             height: 6px;
@@ -243,6 +267,11 @@
             justify-content: center;
             font-size: 1.6rem;
             box-shadow: 0 8px 20px -4px rgba(99, 102, 241, 0.4);
+        }
+
+        .timer-card .icon-box {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            box-shadow: 0 8px 20px -4px rgba(245, 158, 11, 0.4);
         }
 
         .card-title {
@@ -282,6 +311,31 @@
             font-size: 1.1rem;
             font-weight: 500;
             transition: all 0.3s ease;
+        }
+
+        .timer-display {
+            text-align: center;
+        }
+
+        .timer-display .timer-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .timer-display .timer-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .timer-display .timer-subtext {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 4px;
         }
 
         /* Card Footer */
@@ -405,7 +459,7 @@
             🛠️ Free Tools for KJs
         </div>
         <h1>KJ Tools</h1>
-        <p>Free tools to make your karaoke hosting easier. Compliment your singers, manage your queue, and more.</p>
+        <p>Free tools to make your karaoke hosting easier. Compliment your singers, manage your breaks, and more.</p>
     </section>
 
     <!-- Tools Grid -->
@@ -458,7 +512,58 @@
                 </div>
             </a>
 
-            <!-- Tool 2: Coming Soon -->
+            <!-- Tool 2: Break Timer (NOW ACTIVE!) -->
+            <a href="/tools/break-timer.html" class="tool-card timer-card">
+                <div class="gradient-border">
+                    <div class="inner-card">
+                        <div class="orb orb-1"></div>
+                        <div class="orb orb-2"></div>
+
+                        <div class="badges">
+                            <span class="badge badge-tool">KJ Tool</span>
+                            <span class="badge badge-free">
+                                <span class="pulse-dot"></span>
+                                Free
+                            </span>
+                            <span class="badge badge-new">NEW</span>
+                        </div>
+
+                        <div class="card-header">
+                            <div class="icon-box">⏱️</div>
+                            <div>
+                                <div class="card-title">Break Timer</div>
+                                <div class="card-subtitle">Countdown Display</div>
+                            </div>
+                        </div>
+
+                        <div class="display-area">
+                            <div class="display-box">
+                                <div class="timer-display">
+                                    <div class="timer-label">Your Host DJ Mike will be back in</div>
+                                    <div class="timer-value" id="timerPreview">15:00</div>
+                                    <div class="timer-subtext">Pop out to your TV!</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="feature-tags">
+                                <span class="feature-tag">Countdown</span>
+                                <span class="feature-tag">Pop-Out</span>
+                                <span class="feature-tag">Save Presets</span>
+                            </div>
+                            <div class="action-hint">
+                                Open
+                                <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 18l6-6-6-6"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Tool 3: Coming Soon -->
             <div class="tool-card coming-soon-card">
                 <div class="gradient-border">
                     <div class="inner-card">
@@ -484,42 +589,6 @@
                             <div class="feature-tags">
                                 <span class="feature-tag">Queue Display</span>
                                 <span class="feature-tag">Singer Names</span>
-                            </div>
-                        </div>
-
-                        <div class="coming-soon-overlay">
-                            <span class="coming-soon-text">Coming Soon</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tool 3: Coming Soon -->
-            <div class="tool-card coming-soon-card">
-                <div class="gradient-border">
-                    <div class="inner-card">
-                        <div class="badges">
-                            <span class="badge badge-tool">KJ Tool</span>
-                        </div>
-
-                        <div class="card-header">
-                            <div class="icon-box" style="background: linear-gradient(135deg, #475569, #64748b);">⏱️</div>
-                            <div>
-                                <div class="card-title">Break Timer</div>
-                                <div class="card-subtitle">Coming Soon</div>
-                            </div>
-                        </div>
-
-                        <div class="display-area">
-                            <div class="display-box">
-                                <div class="compliment-text" style="color: #64748b;">Countdown display</div>
-                            </div>
-                        </div>
-
-                        <div class="card-footer">
-                            <div class="feature-tags">
-                                <span class="feature-tag">Countdown</span>
-                                <span class="feature-tag">Custom Messages</span>
                             </div>
                         </div>
 
@@ -564,6 +633,20 @@
                     textEl.style.transform = 'translateY(0)';
                 }, 200);
             }, 2500);
+        }
+
+        // Animate timer preview
+        const timerEl = document.getElementById('timerPreview');
+        let timerVal = 900; // 15 minutes in seconds
+        
+        if (timerEl) {
+            setInterval(() => {
+                timerVal--;
+                if (timerVal <= 0) timerVal = 900;
+                const mins = Math.floor(timerVal / 60);
+                const secs = timerVal % 60;
+                timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }, 1000);
         }
     </script>
 </body>
