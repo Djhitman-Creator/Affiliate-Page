@@ -60,8 +60,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 </div>
               </div>
 
-              {/* Right side of header with Help, TOS, and Theme Toggle */}
+              {/* Right side of header with KJ Tools, Help, TOS, and Theme Toggle */}
               <div className="flex items-center gap-3">
+                <a href="/tools/index.html" className="kj-tools-pill">
+                  <span>🛠️</span>
+                  KJ Tools
+                  <span className="badge">NEW</span>
+                </a>
                 <HeaderModals />
                 <ThemeToggle />
               </div>

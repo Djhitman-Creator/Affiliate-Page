@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mic Compliment Rotator | KaraTrack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient-1: #e0e7ff;
+            --bg-gradient-2: #fce7f3;
+            --bg-gradient-3: #dbeafe;
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: rgba(31, 38, 135, 0.15);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-glow: rgba(99, 102, 241, 0.4);
+            --button-bg: rgba(255, 255, 255, 0.5);
+            --button-hover: rgba(255, 255, 255, 0.7);
+            --input-bg: rgba(255, 255, 255, 0.4);
+            --display-bg: rgba(255, 255, 255, 0.35);
+            --checkbox-bg: rgba(255, 255, 255, 0.5);
+            --tip-bg: rgba(99, 102, 241, 0.1);
+            --orb-1: rgba(99, 102, 241, 0.3);
+            --orb-2: rgba(236, 72, 153, 0.25);
+            --orb-3: rgba(34, 211, 238, 0.25);
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient-1: #0f0f23;
+            --bg-gradient-2: #1a1a2e;
+            --bg-gradient-3: #16213e;
+            --glass-bg: rgba(30, 30, 50, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: rgba(0, 0, 0, 0.3);
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --accent-primary: #818cf8;
+            --accent-secondary: #a78bfa;
+            --accent-glow: rgba(129, 140, 248, 0.5);
+            --button-bg: rgba(255, 255, 255, 0.08);
+            --button-hover: rgba(255, 255, 255, 0.15);
+            --input-bg: rgba(255, 255, 255, 0.08);
+            --display-bg: rgba(255, 255, 255, 0.05);
+            --checkbox-bg: rgba(255, 255, 255, 0.1);
+            --tip-bg: rgba(129, 140, 248, 0.15);
+            --orb-1: rgba(129, 140, 248, 0.4);
+            --orb-2: rgba(236, 72, 153, 0.3);
+            --orb-3: rgba(34, 211, 238, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            transition: all 0.5s ease;
+        }
+
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            animation: float 20s infinite ease-in-out;
+            z-index: 0;
+        }
+        .orb-1 { width: 400px; height: 400px; background: var(--orb-1); top: -100px; left: -100px; }
+        .orb-2 { width: 350px; height: 350px; background: var(--orb-2); bottom: -50px; right: -50px; animation-delay: -7s; }
+        .orb-3 { width: 300px; height: 300px; background: var(--orb-3); top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -14s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -30px) scale(1.05); }
+            50% { transform: translate(-20px, 20px) scale(0.95); }
+            75% { transform: translate(20px, 10px) scale(1.02); }
+        }
+
+        .container { width: 100%; max-width: 750px; position: relative; z-index: 1; }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .title-icon { font-size: 1.5rem; -webkit-text-fill-color: initial; }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--button-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+        .status-dot.paused { background: var(--text-muted); animation: none; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.9); }
+        }
+
+        .controls {
+            background: var(--display-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .category-section { margin-bottom: 16px; }
+        .category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .category-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            padding: 8px 12px;
+            background: var(--checkbox-bg);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+        .checkbox-group:hover { background: var(--button-hover); }
+        .checkbox-group input { display: none; }
+
+        .checkbox-custom {
+            width: 20px; height: 20px;
+            background: var(--input-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        .checkbox-custom svg {
+            width: 12px; height: 12px;
+            stroke: white;
+            stroke-width: 3;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.2s ease;
+        }
+        .checkbox-group input:checked + .checkbox-custom {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-color: transparent;
+        }
+        .checkbox-group input:checked + .checkbox-custom svg {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .checkbox-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.3;
+        }
+
+        .select-all-group {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            padding: 8px 16px;
+            border-radius: 10px;
+        }
+        .select-all-group .checkbox-label { color: white; font-weight: 500; }
+        .select-all-group .checkbox-custom { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.4); }
+        .select-all-group input:checked + .checkbox-custom { background: white; }
+        .select-all-group input:checked + .checkbox-custom svg { stroke: var(--accent-primary); }
+
+        .settings-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .display-area {
+            background: var(--display-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 40px 32px;
+            margin-bottom: 20px;
+            text-align: center;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .display-area::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        .compliment-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.4;
+            position: relative;
+            z-index: 1;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--button-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .btn:hover {
+            background: var(--button-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px var(--glass-shadow);
+        }
+        .btn:active { transform: translateY(0); }
+        .btn-icon { font-size: 1rem; }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .font-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+        .font-control label { font-size: 0.85rem; color: var(--text-muted); }
+
+        .font-select {
+            padding: 10px 14px;
+            background: var(--button-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+        }
+        .font-select:focus { border-color: var(--accent-primary); }
+
+        .lines-loaded {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            padding: 8px 14px;
+            background: var(--tip-bg);
+            border-radius: 8px;
+        }
+
+        .tip-section {
+            background: var(--tip-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .tip-icon { font-size: 1.2rem; flex-shrink: 0; }
+        .tip-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+        .tip-text strong { color: var(--accent-primary); }
+
+        .theme-toggle { position: fixed; top: 20px; right: 20px; z-index: 100; }
+        .theme-btn {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--glass-shadow);
+        }
+        .theme-btn:hover { transform: scale(1.1); }
+        .sun-icon, .moon-icon { position: absolute; transition: all 0.3s ease; }
+        [data-theme="dark"] .sun-icon { opacity: 1; transform: rotate(0deg); }
+        [data-theme="dark"] .moon-icon { opacity: 0; transform: rotate(-90deg); }
+        [data-theme="light"] .sun-icon, :root:not([data-theme]) .sun-icon { opacity: 0; transform: rotate(90deg); }
+        [data-theme="light"] .moon-icon, :root:not([data-theme]) .moon-icon { opacity: 1; transform: rotate(0deg); }
+
+        .copy-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            padding: 14px 28px;
+            border-radius: 100px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            box-shadow: 0 8px 30px var(--accent-glow);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1001;
+        }
+        .copy-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 600px) {
+            .header { flex-direction: column; text-align: center; }
+            .title { font-size: 1.4rem; }
+            .category-grid { grid-template-columns: 1fr; }
+            .button-row { justify-content: center; }
+            .font-control { margin-left: 0; width: 100%; justify-content: center; }
+            .glass-card { padding: 24px 20px; }
+            .display-area { padding: 30px 20px; }
+            .settings-row { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="theme-toggle">
+        <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+            <span class="sun-icon">☀️</span>
+            <span class="moon-icon">🌙</span>
+        </button>
+    </div>
+
+    <div class="copy-toast" id="copyToast">✓ Copied to clipboard!</div>
+
+    <div class="container">
+        <div class="glass-card">
+            <div class="header">
+                <h1 class="title">
+                    <span class="title-icon">🎤</span>
+                    Mic Compliment Rotator
+                </h1>
+                <div class="status-badge">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Auto-rotate: on (3 min)</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="category-section">
+                    <div class="category-header">
+                        <span class="category-title">Select Compliment Categories:</span>
+                        <label class="checkbox-group select-all-group">
+                            <input type="checkbox" id="selectAll" checked>
+                            <span class="checkbox-custom">
+                                <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                            <span class="checkbox-label">Select All</span>
+                        </label>
+                    </div>
+                    <div class="category-grid" id="categoryGrid">
+                        <!-- Categories inserted by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="autoRotate" checked>
+                        <span class="checkbox-custom">
+                            <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span class="checkbox-label">Auto-rotate every 3 minutes</span>
+                    </label>
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="floatOnTop">
+                        <span class="checkbox-custom">
+                            <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span class="checkbox-label">Float on top (mini window)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="display-area">
+                <div class="compliment-text" id="complimentDisplay" style="font-size: 1.5rem;">
+                    That was fantastic!
+                </div>
+            </div>
+
+            <div class="button-row">
+                <button class="btn" onclick="prevCompliment()"><span class="btn-icon">◀</span> Prev</button>
+                <button class="btn" onclick="nextCompliment()">Next <span class="btn-icon">▶</span></button>
+                <button class="btn btn-primary" onclick="shuffleCompliment()"><span class="btn-icon">🔀</span> Shuffle</button>
+                <button class="btn" onclick="copyCompliment()"><span class="btn-icon">📋</span> Copy</button>
+                <div class="font-control">
+                    <label for="fontSize">Font size:</label>
+                    <select id="fontSize" class="font-select" onchange="changeFontSize()">
+                        <option value="16">16</option>
+                        <option value="18">18</option>
+                        <option value="20" selected>20</option>
+                        <option value="24">24</option>
+                        <option value="28">28</option>
+                        <option value="32">32</option>
+                        <option value="40">40</option>
+                    </select>
+                    <span class="lines-loaded" id="linesLoaded">500 lines loaded</span>
+                </div>
+            </div>
+
+            <div class="tip-section">
+                <span class="tip-icon">💡</span>
+                <p class="tip-text">
+                    <strong>Tip:</strong> Turn on <strong>Float on top</strong> to display a mini always-visible window (Chrome/Edge). 
+                    Select categories to customize compliments for your show style. Auto-rotate advances every 3 minutes.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Compliments organized by category
+        const complimentsByCategory = {
+            "general": {
+                name: "General Praise",
+                compliments: [
+                    "That was fantastic!", "Amazing job up there!", "You really brought it!", "What a performance!",
+                    "That was smooth!", "You crushed that song!", "Great energy!", "Loved that!", "You nailed it!",
+                    "That was awesome!", "Beautiful singing!", "You've got pipes!", "That was impressive!",
+                    "You made that look easy!", "Great stage presence!", "Wonderful job!", "You sounded amazing!",
+                    "That was powerful!", "You owned that stage!", "Such a clean performance!", "That was fun!",
+                    "You made the crowd happy!", "That was really well done!", "I felt that one!", "That was a vibe!",
+                    "Excellent performance!", "That took talent!", "You've got a great voice!", "You kept it steady!",
+                    "Fantastic control!", "You sang your heart out!", "That was pure joy!", "Absolutely lovely!",
+                    "Great tone!", "You hit those notes!", "You made that song your own!", "That was bold and beautiful!",
+                    "I love your style!", "Your confidence shows!", "You've definitely done this before!",
+                    "That was effortlessly cool!", "You brought some soul to that one!", "Awesome pick — and awesome performance!",
+                    "You lit up the room!", "That was smooth as butter!", "I could listen to you all night!",
+                    "You just raised the bar!", "That was top-tier karaoke!", "Great job, seriously!", "That was pure talent!"
+                ]
+            },
+            "fun": {
+                name: "Fun & Playful",
+                compliments: [
+                    "That was fire!", "You woke the place up!", "You just stole the show!", "I didn't expect that!",
+                    "You surprised us all!", "That was karaoke gold!", "You're dangerous with a microphone!",
+                    "Someone get this person a record deal!", "That stage is shaking!", "That was a whole experience!",
+                    "You broke the sound barrier on that one!", "The crowd loved you!", "That was superstar material!",
+                    "You're a natural!", "I've heard that song a thousand times — never like THAT!", "You gave that song LIFE!",
+                    "I hope you come back up here!", "This crowd needed you!", "Did anyone else get chills?",
+                    "You rocked the house!", "You came to WIN tonight!", "That was big-stage energy!", "You left no crumbs!",
+                    "I don't know about y'all, but that was AWESOME!", "You better save some talent for everyone else!",
+                    "That was a whole concert!", "I need you on my team for karaoke battles!", "That mic loves you!",
+                    "That was a chef-kiss moment!", "You served vocals tonight!", "Someone call Hollywood!",
+                    "That was dangerously good!", "Not you coming up here and SLAYING!", "You ate!",
+                    "You didn't miss a single beat!", "That's how it's done!", "That was next-level!",
+                    "You brought charisma!", "You just unlocked a new fanbase!", "That was too good!",
+                    "Crowd — give it up again!", "That should've been the finale!", "That song fits you so well!",
+                    "You just set the tone for the night!", "That took guts — and you delivered!", "You were meant for this!",
+                    "I'm blown away right now!", "Hot damn, that was good!", "You're a headliner now!",
+                    "That was the performance I didn't know I needed tonight!"
+                ]
+            },
+            "warm": {
+                name: "Warm & Encouraging",
+                compliments: [
+                    "You sang with real heart.", "You had great emotion in that.", "That felt personal.",
+                    "You connected with the song beautifully.", "You brought warmth to the room.",
+                    "Your voice is very soothing.", "You've improved every time you come up.", "That was such a sweet moment.",
+                    "I appreciate your courage up here!", "That took bravery — great job!", "You have natural musicality.",
+                    "There's something special in your tone.", "You've really grown as a performer.", "You made everyone smile.",
+                    "That was wonderfully expressive.", "Your timing was spot-on.", "You sang with confidence.",
+                    "You gave it your all — well done!", "I loved your interpretation of that.", "That was very heartfelt.",
+                    "You're stronger than you think as a singer!", "That was beautifully done.", "You had such clean pitch there.",
+                    "You made that look fun!", "Your enthusiasm is contagious.", "You lit up the room.",
+                    "You created a moment right there.", "That took real passion.", "You're shining tonight!",
+                    "You brought a peaceful vibe.", "That felt genuine.", "You handled that song beautifully.",
+                    "You've clearly practiced — great job!", "That was smoother than velvet.",
+                    "Your voice carried well through the room.", "Your tone was warm and rich.",
+                    "You kept control the whole time.", "You showed great vocal dynamics.",
+                    "You handled those notes gracefully.", "That was very touching.", "I'm proud of you — great job!",
+                    "You put emotion into every line.", "You blended with the music beautifully.",
+                    "You handled that key perfectly.", "You showed real artistry.", "Your voice is unique and memorable.",
+                    "You had everyone tuned in.", "You left your mark on that stage.",
+                    "Keep singing — you've got something special.", "You brought comfort to the room with that voice."
+                ]
+            },
+            "crowd": {
+                name: "Crowd-Engaging",
+                compliments: [
+                    "How about that performance?!", "Give it up loud for that voice!", "This crowd loves you!",
+                    "That was a crowd-pleaser for sure!", "You won the audience tonight!", "Everyone's cheering for a reason!",
+                    "You just made a LOT of new fans.", "That applause says it all!", "That's what karaoke is all about!",
+                    "You filled this whole place with energy!", "You had the room vibing!", "That was a standing-ovation moment!",
+                    "Y'all feel that? That was special!", "That performance brought people together!",
+                    "I think the room just got brighter!", "You hyped the crowd up so well!", "We needed that!",
+                    "You gave this room life!", "That was unforgettable!", "The crowd felt every note!",
+                    "You created magic in here!", "Everybody was locked in!", "That was a room-shaking performance!",
+                    "We're still buzzing from that!", "That deserves another round of applause!",
+                    "This crowd appreciated that one!", "That performance lifted the whole mood!",
+                    "You brought the party with you!", "Everyone was cheering — great job!", "That got the whole place moving!",
+                    "That song hit different tonight!", "You electrified the room!", "That had everyone smiling!",
+                    "That was a moment we'll remember!", "The crowd loved every second!", "That was karaoke spirit at its best!",
+                    "This place is alive now — thanks to you!", "You set the tone for tonight!", "That was a crowd favorite!",
+                    "People were singing along — that says a lot!", "You got everyone clapping!",
+                    "That whole room was rooting for you!", "You got people on their feet!", "That's how you command a room!",
+                    "Great connection with the audience!", "You made that interactive!", "The audience fed off your energy!",
+                    "That applause proves it — amazing job!", "The crowd can't wait to hear more from you!", "That was a night-maker!"
+                ]
+            },
+            "humor": {
+                name: "Humor / Lighthearted",
+                compliments: [
+                    "Alright, save some talent for the rest of us!", "That mic just fell in love with you.", "Beyoncé who?",
+                    "Adele might be nervous now!", "Taylor Swift wishes she wrote it like THAT.",
+                    "I'm filing a noise complaint — too much talent!", "You broke at least 3 karaoke laws with that performance.",
+                    "The karaoke gods are pleased.", "I smell a future Grammy!", "You woke up the speakers!",
+                    "The smoke detectors almost went off — that was hot!", "I hope you warned your neighbors.",
+                    "We need to check the roof… you might've blown it off!", "Ma'am/Sir, that was illegal levels of good.",
+                    "I'd clap but I'm still recovering!", "Are you available for birthdays and bar mitzvahs?",
+                    "That was like butter… sizzling butter.", "I suddenly feel underdressed for this level of talent.",
+                    "The bar just got raised AND shaken.", "I need a moment to process that!",
+                    "Can someone call 911? That performance was FIRE.", "Someone get this person a tour bus!",
+                    "You just sold out a stadium… in your imagination, but still!", "I didn't know angels sang karaoke!",
+                    "That wasn't karaoke — that was a concert!", "Siri, play \"Talent\" by YOU.",
+                    "That mic should be asking for your autograph.", "That was so good, I almost forgot my job!",
+                    "Goosebumps achieved.", "I think I just witnessed history.", "The jukebox is jealous now.",
+                    "Simon Cowell would be speechless.", "I'm going to need you to teach me how to sing.",
+                    "That was so good, I'm questioning my life choices.", "You just unlocked \"Karaoke Legend\" status.",
+                    "Everyone else — good luck following THAT.", "That wasn't karaoke, that was straight sorcery!",
+                    "Someone check the talent meter — it's overflowing.", "I think the lights got brighter just for you.",
+                    "This just turned into a talent show!", "You've been practicing in the shower, haven't you?",
+                    "I see you, superstar!", "If there was a trophy, you'd have it.", "The speakers bowed to you.",
+                    "That was worth the price of admission — and admission is free!", "The karaoke spirits are smiling.",
+                    "I want THAT as my ringtone.", "Are you accepting fan club applications?",
+                    "That song didn't even know it could sound that good.", "This microphone will never be the same."
+                ]
+            },
+            "classy": {
+                name: "Classy & Professional",
+                compliments: [
+                    "Excellent musical phrasing.", "Very clean delivery.", "Exceptional tone quality.",
+                    "Clear articulation throughout.", "Your vibrato was beautiful.", "Lovely control on sustained notes.",
+                    "Your pitch was very consistent.", "Confident and steady performance.", "Great stylistic interpretation.",
+                    "Well-chosen dynamics.", "Excellent breath control.", "Polished performance.",
+                    "Strong and resonant voice.", "Perfect tempo handling.", "You handled transitions wonderfully.",
+                    "Your voice has character.", "Excellent mic technique.", "That was musically refined.",
+                    "You displayed real vocal strength.", "Professional-level tone.", "Very good stylistic choice.",
+                    "Elegant performance.", "You maintained excellent rhythm.", "That was clean and expressive.",
+                    "Very well-executed.", "You have a pleasing timbre.", "You showed great vocal consistency.",
+                    "Your range is impressive.", "You handled the melody effortlessly.", "Strong modulation awareness.",
+                    "Great stylistic confidence.", "That was wonderfully balanced.", "Confident vocal delivery.",
+                    "Very mature sound.", "Precise note accuracy.", "Great tonal clarity.",
+                    "Very strong performance overall.", "Excellent vocal placement.", "You displayed control and finesse.",
+                    "Tasteful ornamentation.", "Impeccable musical instincts.", "Beautiful sense of phrasing.",
+                    "That was richly expressive.", "You showcased real artistry.", "Excellent pitch retention.",
+                    "Lovely vocal presence.", "Your voice filled the room effortlessly.", "Classy performance.",
+                    "Very polished work.", "That was studio-quality."
+                ]
+            },
+            "flirty": {
+                name: "Safe But Flirty / Fun",
+                compliments: [
+                    "You've got some charm up there!", "That was smooth AND stylish.", "You brought the charisma!",
+                    "You've got star-quality confidence.", "Look at you shining up there!", "You've got that main-character energy.",
+                    "You really came to impress!", "You've got real stage confidence.", "That smile says it all — great job!",
+                    "You radiate talent!", "You made that look GOOD.", "You're glowing after that performance!",
+                    "That was charming as heck.", "You've got a magnetic presence.", "You definitely turned some heads!",
+                    "You brought the cool factor with you!", "That was stylish from start to finish.",
+                    "You walked up there like a star.", "You owned that performance confidently.",
+                    "That was smooth operator energy!", "You made that look like a music video.",
+                    "You've got confidence AND talent.", "That was effortlessly attractive — in a performance way!",
+                    "You brought swagger to the stage.", "You've got undeniable presence.",
+                    "That took charisma — and you had plenty!", "You carried that like a boss.",
+                    "You walked up and dominated.", "That was a whole vibe and aesthetic.", "You've got a performer's glow.",
+                    "You didn't just sing — you delivered.", "You brought some heat with that one!",
+                    "That performance had style!", "You've got some star quality!", "You shined up there!",
+                    "You had everyone's attention.", "That confidence looked good on you!",
+                    "You rocked that stage with presence.", "You gave superstar energy.", "That was charismatic and smooth.",
+                    "You have a knack for performance.", "You had the whole room watching.",
+                    "That was impressive from the moment you stepped up.", "You carried yourself like a pro.",
+                    "That was stylish AND powerful.", "You've got that bold performer energy.",
+                    "You stepped up and lit up the room.", "Big charisma points for that one!",
+                    "You looked like you belonged on stage.", "You've got a voice AND a vibe."
+                ]
+            },
+            "quick": {
+                name: "Short & Quick",
+                compliments: [
+                    "Great job!", "Loved it!", "Awesome!", "Nice one!", "Beautiful!", "Clean!", "Strong!", "Smooth!",
+                    "Fun!", "Killer vocals!", "Fire!", "Bravo!", "Solid!", "Sweet!", "Fantastic!", "Amazing work!",
+                    "Nice tone!", "Good energy!", "Great pick!", "You rocked it!", "Wonderful!", "Perfect!",
+                    "Outstanding!", "Stunning!", "That hit!", "You crushed it!", "Powerful!", "Well sung!",
+                    "Great presence!", "Really good!", "Nailed it!", "Big talent!", "Loved the vibe!", "Good control!",
+                    "Strong voice!", "Beautiful tone!", "Excellent!", "Great flow!", "Very nice!", "That was fun!",
+                    "Smooth delivery!", "Perfect choice!", "You did great!", "Well done!", "What a performance!",
+                    "That was special!", "Really enjoyed that!", "You sounded great!", "Great energy!", "Keep singing!"
+                ]
+            },
+            "songtype": {
+                name: "Song Type Specific",
+                compliments: [
+                    "You rocked that ballad beautifully.", "You killed that upbeat track!",
+                    "That slow song fits your voice perfectly.", "You brought soul into that R&B track.",
+                    "You handled that rock song like a pro.", "That country twang sounded great!",
+                    "You delivered that pop song cleanly.", "That was a perfect classic hit rendition.",
+                    "You elevated that 80s song!", "You brought drama to that power ballad.",
+                    "Your voice suits oldies so well.", "You added flavor to that Latin track.",
+                    "That duet energy was strong!", "You handled that rap section amazingly!",
+                    "That was a great hip-hop flow.", "You added warmth to that acoustic-style track.",
+                    "You carried that emotional song beautifully.", "You gave that rock song grit!",
+                    "Your voice soared on those high notes.", "You brought smoothness to that jazz number.",
+                    "That blues song fit you perfectly.", "You gave that Disney song magic!",
+                    "You made that Broadway number shine.", "You added attitude to that punk song!",
+                    "Great swing feel!", "You nailed that Motown tune.", "That soul song was perfect for your voice.",
+                    "You brought fire to that dance track!", "Nice job on that throwback tune.",
+                    "That was a great 90s classic!", "You revived that 70s hit!", "You energized that 2000s track.",
+                    "You brought nostalgia with that song.", "Amazing job on that emotional ballad.",
+                    "That party anthem hit hard!", "You handled that fast song effortlessly.",
+                    "You made that love song feel real.", "Awesome rap-to-singing transitions.",
+                    "You rocked that duet like a star!", "Excellent job on that challenging song.",
+                    "That song suited your vocal strengths.", "You picked a perfect key.",
+                    "You handled those long notes perfectly.", "You controlled the rhythm beautifully.",
+                    "That chorus was powerful!", "Your runs were clean!", "You nailed the bridge!",
+                    "That final note was everything!", "You made that tricky melody look easy.",
+                    "That was a masterful song choice!"
+                ]
+            },
+            "hype": {
+                name: "Hype / High Energy",
+                compliments: [
+                    "That was electric!", "You blew the roof off!", "Straight heat!", "That was wild—in the best way!",
+                    "You brought the FIRE tonight!", "That was savage!", "That was high-octane karaoke!",
+                    "You unleashed the beast!", "You turned this place UP!", "That was pure hype!",
+                    "You brought maximum energy!", "You just started a party!", "That woke everyone up!",
+                    "You set the place on FIRE!", "You brought unstoppable energy!", "That was explosive!",
+                    "You delivered serious heat!", "You took that song to the next dimension!", "That performance slapped!",
+                    "You made the speakers proud!", "You turned this into a concert!", "That was a full-blast performance!",
+                    "You went ALL IN!", "You shook the walls with that one!", "You just activated party mode!",
+                    "That was insanely good!", "You brought full-on superstar energy!", "That performance had power!",
+                    "You came in HOT!", "That song never sounded better!", "You're unstoppable tonight!",
+                    "You just upgraded karaoke night!", "That was a performance with punch!", "The room is buzzing after that!",
+                    "That was phenomenal energy!", "You didn't hold back — and it showed!", "That was shockingly good!",
+                    "You made the whole place erupt!", "You set the crowd OFF!", "That was unfiltered talent!",
+                    "That was a hurricane of awesome!", "You had the room shaking!",
+                    "That performance was LOUD in the energy department!", "You went absolutely OFF!",
+                    "That was top-tier hype energy!", "You left flames on that stage!",
+                    "You just created a viral moment!", "That performance was LEGENDARY.",
+                    "You absolutely DOMINATED that!", "That was PURE POWER."
+                ]
+            }
+        };
+
+        const categoryOrder = ["general", "fun", "warm", "crowd", "humor", "classy", "flirty", "quick", "songtype", "hype"];
+        let activeCompliments = [];
+        let currentIndex = 0;
+        let autoRotateInterval = null;
+        let pipWindow = null;
+        let popupWindow = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCategoryCheckboxes();
+            setupEventListeners();
+            updateActiveCompliments();
+            startAutoRotate();
+            loadTheme();
+            changeFontSize();
+        });
+
+        function renderCategoryCheckboxes() {
+            const grid = document.getElementById('categoryGrid');
+            grid.innerHTML = categoryOrder.map(key => {
+                const cat = complimentsByCategory[key];
+                return `
+                    <label class="checkbox-group">
+                        <input type="checkbox" class="category-checkbox" data-category="${key}" checked>
+                        <span class="checkbox-custom">
+                            <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span class="checkbox-label">${cat.name} (${cat.compliments.length})</span>
+                    </label>
+                `;
+            }).join('');
+        }
+
+        function setupEventListeners() {
+            document.getElementById('autoRotate').addEventListener('change', handleAutoRotate);
+            document.getElementById('floatOnTop').addEventListener('change', handleFloatOnTop);
+            document.getElementById('selectAll').addEventListener('change', handleSelectAll);
+            document.querySelectorAll('.category-checkbox').forEach(cb => cb.addEventListener('change', handleCategoryChange));
+        }
+
+        function handleSelectAll() {
+            const isChecked = document.getElementById('selectAll').checked;
+            document.querySelectorAll('.category-checkbox').forEach(cb => cb.checked = isChecked);
+            updateActiveCompliments();
+        }
+
+        function handleCategoryChange() {
+            const allCheckboxes = document.querySelectorAll('.category-checkbox');
+            const checkedCount = document.querySelectorAll('.category-checkbox:checked').length;
+            document.getElementById('selectAll').checked = checkedCount === allCheckboxes.length;
+            updateActiveCompliments();
+        }
+
+        function updateActiveCompliments() {
+            activeCompliments = [];
+            document.querySelectorAll('.category-checkbox:checked').forEach(cb => {
+                const category = cb.dataset.category;
+                activeCompliments = activeCompliments.concat(complimentsByCategory[category].compliments);
+            });
+            if (activeCompliments.length === 0) activeCompliments = ["Please select at least one category!"];
+            currentIndex = 0;
+            updateDisplay();
+            document.getElementById('linesLoaded').textContent = `${activeCompliments.length} lines loaded`;
+        }
+
+        function getCompliment(index) { return activeCompliments[index] || "Select a category"; }
+
+        function updateDisplay() {
+            const display = document.getElementById('complimentDisplay');
+            const text = getCompliment(currentIndex);
+            display.style.opacity = '0';
+            display.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                display.textContent = text;
+                display.style.opacity = '1';
+                display.style.transform = 'translateY(0)';
+            }, 150);
+            updatePipDisplay(text);
+            updatePopupDisplay(text);
+        }
+
+        function updatePipDisplay(text) {
+            if (pipWindow && !pipWindow.closed) {
+                const pipText = pipWindow.document.getElementById('pipCompliment');
+                if (pipText) pipText.textContent = text;
+            }
+        }
+
+        function updatePopupDisplay(text) {
+            if (popupWindow && !popupWindow.closed) {
+                const popupText = popupWindow.document.getElementById('popupCompliment');
+                if (popupText) popupText.textContent = text;
+            }
+        }
+
+        function nextCompliment() {
+            currentIndex = (currentIndex + 1) % activeCompliments.length;
+            updateDisplay();
+            resetAutoRotate();
+        }
+
+        function prevCompliment() {
+            currentIndex = (currentIndex - 1 + activeCompliments.length) % activeCompliments.length;
+            updateDisplay();
+            resetAutoRotate();
+        }
+
+        function shuffleCompliment() {
+            if (activeCompliments.length <= 1) return;
+            let newIndex;
+            do { newIndex = Math.floor(Math.random() * activeCompliments.length); } while (newIndex === currentIndex);
+            currentIndex = newIndex;
+            updateDisplay();
+            resetAutoRotate();
+        }
+
+        function copyCompliment() {
+            const text = getCompliment(currentIndex);
+            navigator.clipboard.writeText(text).then(() => showToast());
+        }
+
+        function showToast() {
+            const toast = document.getElementById('copyToast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        function changeFontSize() {
+            const size = document.getElementById('fontSize').value;
+            document.getElementById('complimentDisplay').style.fontSize = size + 'px';
+        }
+
+        function handleAutoRotate() {
+            const checkbox = document.getElementById('autoRotate');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            if (checkbox.checked) {
+                startAutoRotate();
+                statusDot.classList.remove('paused');
+                statusText.textContent = 'Auto-rotate: on (3 min)';
+            } else {
+                stopAutoRotate();
+                statusDot.classList.add('paused');
+                statusText.textContent = 'Auto-rotate: off';
+            }
+        }
+
+        function startAutoRotate() {
+            if (autoRotateInterval) clearInterval(autoRotateInterval);
+            autoRotateInterval = setInterval(() => {
+                if (document.getElementById('autoRotate').checked) nextCompliment();
+            }, 180000);
+        }
+
+        function stopAutoRotate() {
+            if (autoRotateInterval) { clearInterval(autoRotateInterval); autoRotateInterval = null; }
+        }
+
+        function resetAutoRotate() {
+            if (document.getElementById('autoRotate').checked) startAutoRotate();
+        }
+
+        async function handleFloatOnTop() {
+            const checkbox = document.getElementById('floatOnTop');
+            if (checkbox.checked) {
+                if ('documentPictureInPicture' in window) {
+                    try { await openDocumentPiP(); return; } catch (err) { console.log('PiP failed:', err); }
+                }
+                openPopupWindow();
+            } else {
+                closePipWindow();
+                closePopupWindow();
+            }
+        }
+
+        async function openDocumentPiP() {
+            const currentText = getCompliment(currentIndex);
+            pipWindow = await window.documentPictureInPicture.requestWindow({ width: 400, height: 250 });
+            const style = pipWindow.document.createElement('style');
+            style.textContent = `
+                @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&family=Space+Grotesk:wght@600&display=swap');
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: 'Outfit', sans-serif; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%); color: #f1f5f9; }
+                .pip-compliment { font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; font-weight: 600; text-align: center; margin-bottom: 20px; padding: 0 10px; line-height: 1.4; }
+                .pip-buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+                .pip-btn { padding: 10px 18px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: #f1f5f9; font-family: 'Outfit', sans-serif; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
+                .pip-btn:hover { background: rgba(255, 255, 255, 0.2); }
+                .pip-tip { margin-top: 15px; font-size: 0.7rem; color: #64748b; text-align: center; }
+            `;
+            pipWindow.document.head.appendChild(style);
+            pipWindow.document.body.innerHTML = `
+                <div class="pip-compliment" id="pipCompliment">${currentText}</div>
+                <div class="pip-buttons">
+                    <button class="pip-btn" id="pipPrev">◀</button>
+                    <button class="pip-btn" id="pipNext">▶</button>
+                    <button class="pip-btn" id="pipShuffle">Shuffle</button>
+                    <button class="pip-btn" id="pipCopy">Copy</button>
+                </div>
+                <div class="pip-tip">Always on top • Drag to resize</div>
+            `;
+            pipWindow.document.getElementById('pipPrev').addEventListener('click', () => prevCompliment());
+            pipWindow.document.getElementById('pipNext').addEventListener('click', () => nextCompliment());
+            pipWindow.document.getElementById('pipShuffle').addEventListener('click', () => shuffleCompliment());
+            pipWindow.document.getElementById('pipCopy').addEventListener('click', () => copyCompliment());
+            pipWindow.addEventListener('pagehide', () => { document.getElementById('floatOnTop').checked = false; pipWindow = null; });
+        }
+
+        function openPopupWindow() {
+            const currentText = getCompliment(currentIndex);
+            const width = 420, height = 280;
+            popupWindow = window.open('', 'MicComplimentMini', `width=${width},height=${height},left=${window.screen.width - width - 50},top=50,resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`);
+            if (!popupWindow) { alert('Please allow popups for this site.'); document.getElementById('floatOnTop').checked = false; return; }
+            popupWindow.document.write(`<!DOCTYPE html><html><head><title>Mic Compliment</title><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&family=Space+Grotesk:wght@600&display=swap" rel="stylesheet"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Outfit',sans-serif;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;background:linear-gradient(135deg,#0f0f23 0%,#1a1a2e 50%,#16213e 100%);color:#f1f5f9}.popup-compliment{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:600;text-align:center;margin-bottom:20px;padding:0 10px;line-height:1.4}.popup-buttons{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.popup-btn{padding:10px 18px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#f1f5f9;font-family:'Outfit',sans-serif;font-size:0.9rem;cursor:pointer;transition:all 0.2s ease}.popup-btn:hover{background:rgba(255,255,255,0.2)}.popup-tip{margin-top:15px;font-size:0.7rem;color:#64748b;text-align:center}</style></head><body><div class="popup-compliment" id="popupCompliment">${currentText}</div><div class="popup-buttons"><button class="popup-btn" onclick="window.opener.prevCompliment()">◀</button><button class="popup-btn" onclick="window.opener.nextCompliment()">▶</button><button class="popup-btn" onclick="window.opener.shuffleCompliment()">Shuffle</button><button class="popup-btn" onclick="window.opener.copyCompliment()">Copy</button></div><div class="popup-tip">Keep this window on top • Drag to move</div></body></html>`);
+            popupWindow.document.close();
+            const checkClosed = setInterval(() => { if (popupWindow.closed) { clearInterval(checkClosed); document.getElementById('floatOnTop').checked = false; popupWindow = null; } }, 500);
+        }
+
+        function closePipWindow() { if (pipWindow && !pipWindow.closed) { pipWindow.close(); pipWindow = null; } }
+        function closePopupWindow() { if (popupWindow && !popupWindow.closed) { popupWindow.close(); popupWindow = null; } }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+            else document.documentElement.setAttribute('data-theme', window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        }
+    </script>
+</body>
+</html>

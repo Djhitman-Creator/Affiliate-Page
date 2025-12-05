@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KJ Tools | KaraTrack+</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            color: #e2e8f0;
+        }
+
+        /* Header */
+        .header {
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .back-link:hover {
+            color: #e2e8f0;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 60px 24px 40px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 50px;
+            color: #a5b4fc;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        /* Tools Grid */
+        .tools-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        /* Tool Card */
+        .tool-card {
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .tool-card:hover {
+            transform: scale(1.02);
+        }
+
+        .tool-card:hover .action-hint {
+            color: #818cf8;
+        }
+
+        .tool-card:hover .arrow-icon {
+            transform: translateX(4px);
+        }
+
+        .gradient-border {
+            position: relative;
+            padding: 2px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+            box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.25);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .tool-card:hover .gradient-border {
+            box-shadow: 0 25px 60px -12px rgba(99, 102, 241, 0.4);
+        }
+
+        .inner-card {
+            position: relative;
+            background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a);
+            border-radius: 18px;
+            padding: 24px;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Animated Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            pointer-events: none;
+            animation: float 6s infinite ease-in-out;
+        }
+
+        .orb-1 {
+            width: 120px;
+            height: 120px;
+            background: rgba(99, 102, 241, 0.3);
+            top: -40px;
+            left: -40px;
+        }
+
+        .orb-2 {
+            width: 120px;
+            height: 120px;
+            background: rgba(236, 72, 153, 0.25);
+            bottom: -40px;
+            right: -40px;
+            animation-delay: -3s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+            50% { transform: translate(10px, -10px) scale(1.1); opacity: 1; }
+        }
+
+        /* Badges */
+        .badges {
+            position: relative;
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            z-index: 10;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 50px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-tool {
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .badge-free {
+            background: rgba(16, 185, 129, 0.15);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pulse-dot {
+            width: 6px;
+            height: 6px;
+            background: #6ee7b7;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* Card Header */
+        .card-header {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+            z-index: 10;
+        }
+
+        .icon-box {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            box-shadow: 0 8px 20px -4px rgba(99, 102, 241, 0.4);
+        }
+
+        .card-title {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .card-subtitle {
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        /* Display Area */
+        .display-area {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .display-box {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            backdrop-filter: blur(10px);
+        }
+
+        .compliment-text {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        /* Card Footer */
+        .card-footer {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            z-index: 10;
+        }
+
+        .feature-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .feature-tag {
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+        }
+
+        .action-hint {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #64748b;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .arrow-icon {
+            transition: transform 0.3s ease;
+        }
+
+        /* Coming Soon Card */
+        .coming-soon-card .inner-card {
+            opacity: 0.6;
+        }
+
+        .coming-soon-card .gradient-border {
+            background: linear-gradient(135deg, #475569, #64748b);
+        }
+
+        .coming-soon-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 18px;
+            z-index: 20;
+        }
+
+        .coming-soon-text {
+            padding: 12px 24px;
+            background: rgba(71, 85, 105, 0.5);
+            border: 1px solid rgba(71, 85, 105, 0.8);
+            border-radius: 50px;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .page-footer {
+            text-align: center;
+            padding: 40px 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .page-footer p {
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        .page-footer a {
+            color: #818cf8;
+            text-decoration: none;
+        }
+
+        .page-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .hero h1 {
+                font-size: 1.75rem;
+            }
+            
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <a href="/" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 18l-6-6 6-6"/>
+            </svg>
+            Back to Search
+        </a>
+        <div class="logo">KaraTrack+</div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-badge">
+            🛠️ Free Tools for KJs
+        </div>
+        <h1>KJ Tools</h1>
+        <p>Free tools to make your karaoke hosting easier. Compliment your singers, manage your queue, and more.</p>
+    </section>
+
+    <!-- Tools Grid -->
+    <section class="tools-section">
+        <div class="tools-grid">
+            
+            <!-- Tool 1: Mic Compliment Rotator -->
+            <a href="/tools/mic-compliment-rotator.html" class="tool-card">
+                <div class="gradient-border">
+                    <div class="inner-card">
+                        <div class="orb orb-1"></div>
+                        <div class="orb orb-2"></div>
+
+                        <div class="badges">
+                            <span class="badge badge-tool">KJ Tool</span>
+                            <span class="badge badge-free">
+                                <span class="pulse-dot"></span>
+                                Free
+                            </span>
+                        </div>
+
+                        <div class="card-header">
+                            <div class="icon-box">🎤</div>
+                            <div>
+                                <div class="card-title">Mic Compliments</div>
+                                <div class="card-subtitle">Rotator Tool</div>
+                            </div>
+                        </div>
+
+                        <div class="display-area">
+                            <div class="display-box">
+                                <div class="compliment-text" id="complimentText1">You're a star! 🌟</div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="feature-tags">
+                                <span class="feature-tag">Auto-Rotate</span>
+                                <span class="feature-tag">Custom Lines</span>
+                                <span class="feature-tag">Float Mode</span>
+                            </div>
+                            <div class="action-hint">
+                                Open
+                                <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 18l6-6-6-6"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Tool 2: Coming Soon -->
+            <div class="tool-card coming-soon-card">
+                <div class="gradient-border">
+                    <div class="inner-card">
+                        <div class="badges">
+                            <span class="badge badge-tool">KJ Tool</span>
+                        </div>
+
+                        <div class="card-header">
+                            <div class="icon-box" style="background: linear-gradient(135deg, #475569, #64748b);">📋</div>
+                            <div>
+                                <div class="card-title">Queue Manager</div>
+                                <div class="card-subtitle">Coming Soon</div>
+                            </div>
+                        </div>
+
+                        <div class="display-area">
+                            <div class="display-box">
+                                <div class="compliment-text" style="color: #64748b;">Singer queue display</div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="feature-tags">
+                                <span class="feature-tag">Queue Display</span>
+                                <span class="feature-tag">Singer Names</span>
+                            </div>
+                        </div>
+
+                        <div class="coming-soon-overlay">
+                            <span class="coming-soon-text">Coming Soon</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tool 3: Coming Soon -->
+            <div class="tool-card coming-soon-card">
+                <div class="gradient-border">
+                    <div class="inner-card">
+                        <div class="badges">
+                            <span class="badge badge-tool">KJ Tool</span>
+                        </div>
+
+                        <div class="card-header">
+                            <div class="icon-box" style="background: linear-gradient(135deg, #475569, #64748b);">⏱️</div>
+                            <div>
+                                <div class="card-title">Break Timer</div>
+                                <div class="card-subtitle">Coming Soon</div>
+                            </div>
+                        </div>
+
+                        <div class="display-area">
+                            <div class="display-box">
+                                <div class="compliment-text" style="color: #64748b;">Countdown display</div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="feature-tags">
+                                <span class="feature-tag">Countdown</span>
+                                <span class="feature-tag">Custom Messages</span>
+                            </div>
+                        </div>
+
+                        <div class="coming-soon-overlay">
+                            <span class="coming-soon-text">Coming Soon</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+        <p>Part of <a href="/">KaraTrack+</a> • Free karaoke tools for KJs</p>
+    </footer>
+
+    <script>
+        // Animate the compliment text
+        const compliments = [
+            "You're a star! 🌟",
+            "Nailed it! 🎤",
+            "Crowd favorite! 🎵",
+            "Born to sing! ✨"
+        ];
+        
+        let currentIndex = 0;
+        const textEl = document.getElementById('complimentText1');
+        
+        if (textEl) {
+            textEl.style.transition = 'all 0.2s ease';
+            
+            setInterval(() => {
+                textEl.style.opacity = '0';
+                textEl.style.transform = 'translateY(-5px)';
+                
+                setTimeout(() => {
+                    currentIndex = (currentIndex + 1) % compliments.length;
+                    textEl.textContent = compliments[currentIndex];
+                    textEl.style.opacity = '1';
+                    textEl.style.transform = 'translateY(0)';
+                }, 200);
+            }, 2500);
+        }
+    </script>
+</body>
+</html>

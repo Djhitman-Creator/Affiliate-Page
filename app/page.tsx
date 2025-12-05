@@ -472,6 +472,7 @@ function SignupModal({
           timestamp: new Date().toISOString()
         })
       });
+      
 
       if (response.ok) {
         setSignupSuccess(true);
