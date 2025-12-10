@@ -67,6 +67,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   KJ Tools
                   <span className="badge">NEW</span>
                 </a>
+                <a href="/gear" className="kj-tools-pill" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+                  <span>🛒</span>
+                  Gear
+                </a>
                 <HeaderModals />
                 <ThemeToggle />
               </div>

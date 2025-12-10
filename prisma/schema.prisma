@@ -19,5 +19,18 @@ model Track {
   source      String   @default("Party Tyme")
   imageUrl    String?
   createdAt   DateTime @default(now())
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       String
+  image       String
+  affiliateUrl String
+  category    String   @default("Karaoke Machines")
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

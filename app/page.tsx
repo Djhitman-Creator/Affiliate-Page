@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState, } from 'react';
 import SEOContent from '@/components/SEOContent'
+import ProductManager from '@/components/ProductManager';
 
 type Row = {
   id?: string | number | null;
@@ -404,6 +405,11 @@ function AdminSection({ isUnlocked, setIsUnlocked }: AdminSectionProps) {
             View Count
           </button>
         </div>
+      </div>
+
+{/* Product Manager */}
+      <div className="mt-4 border-t border-white/10 pt-4">
+        <ProductManager />
       </div>
 
       {/* Original Admin Links */}
