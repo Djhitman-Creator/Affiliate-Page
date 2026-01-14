@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spin-A-Win! | KaraTrack+ KJ Tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient-1: #e0e7ff;
+            --bg-gradient-2: #fce7f3;
+            --bg-gradient-3: #dbeafe;
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: rgba(31, 38, 135, 0.15);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --accent-primary: #f59e0b;
+            --accent-secondary: #ec4899;
+            --accent-glow: rgba(245, 158, 11, 0.4);
+            --button-bg: rgba(255, 255, 255, 0.5);
+            --button-hover: rgba(255, 255, 255, 0.7);
+            --input-bg: rgba(255, 255, 255, 0.6);
+            --display-bg: rgba(255, 255, 255, 0.35);
+            --card-bg: rgba(255, 255, 255, 0.4);
+            --orb-1: rgba(245, 158, 11, 0.3);
+            --orb-2: rgba(236, 72, 153, 0.25);
+            --orb-3: rgba(34, 211, 238, 0.25);
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient-1: #0f0f23;
+            --bg-gradient-2: #1a1a2e;
+            --bg-gradient-3: #16213e;
+            --glass-bg: rgba(30, 30, 50, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: rgba(0, 0, 0, 0.3);
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --accent-primary: #fbbf24;
+            --accent-secondary: #f472b6;
+            --accent-glow: rgba(251, 191, 36, 0.5);
+            --button-bg: rgba(255, 255, 255, 0.08);
+            --button-hover: rgba(255, 255, 255, 0.15);
+            --input-bg: rgba(255, 255, 255, 0.1);
+            --display-bg: rgba(255, 255, 255, 0.05);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --orb-1: rgba(251, 191, 36, 0.4);
+            --orb-2: rgba(244, 114, 182, 0.3);
+            --orb-3: rgba(34, 211, 238, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            transition: all 0.5s ease;
+        }
+
+        /* Floating Orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            animation: float 20s infinite ease-in-out;
+            z-index: 0;
+        }
+        .orb-1 { width: 400px; height: 400px; background: var(--orb-1); top: -100px; left: -100px; }
+        .orb-2 { width: 350px; height: 350px; background: var(--orb-2); bottom: -50px; right: -50px; animation-delay: -7s; }
+        .orb-3 { width: 300px; height: 300px; background: var(--orb-3); top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -14s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -30px) scale(1.05); }
+            50% { transform: translate(-20px, 20px) scale(0.95); }
+            75% { transform: translate(20px, 10px) scale(1.02); }
+        }
+
+        .container { width: 100%; max-width: 1000px; position: relative; z-index: 1; margin-top: 20px; }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .title-icon { font-size: 1.5rem; -webkit-text-fill-color: initial; }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--text-primary); }
+
+        /* Instructions */
+        .instructions {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+
+        .instructions-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .instructions p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 6px;
+        }
+
+        .instructions p:last-child { margin-bottom: 0; }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Prize Slots Section */
+        .slots-section {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title .icon { font-size: 1.2rem; }
+
+        .slots-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .slot-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .slot-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .slot-input {
+            flex: 1;
+            padding: 10px 12px;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .slot-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .slot-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Slot Colors */
+        .slot-1 { background: #ef4444; }
+        .slot-2 { background: #f97316; }
+        .slot-3 { background: #eab308; }
+        .slot-4 { background: #22c55e; }
+        .slot-5 { background: #14b8a6; }
+        .slot-6 { background: #06b6d4; }
+        .slot-7 { background: #3b82f6; }
+        .slot-8 { background: #8b5cf6; }
+        .slot-9 { background: #a855f7; }
+        .slot-10 { background: #ec4899; }
+        .slot-11 { background: #f43f5e; }
+        .slot-12 { background: #6366f1; }
+
+        /* Slot Checkbox */
+        .slot-checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-primary);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .slot-checkbox:checked {
+            accent-color: var(--accent-primary);
+        }
+
+        /* Extra Message Section */
+        .extra-message-section {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .extra-message-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .extra-message-input {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .extra-message-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .extra-message-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .extra-message-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        /* Wheel Section */
+        .wheel-section {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Wheel Container */
+        .wheel-container {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            margin: 20px 0;
+        }
+
+        .wheel-wrapper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #wheelCanvas {
+            width: 100%;
+            height: 100%;
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+        }
+
+        /* Wheel Pointer - Triangle at top */
+        .wheel-pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        .wheel-pointer::before {
+            content: '';
+            display: block;
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 35px solid var(--accent-primary);
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .wheel-pointer::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-top: 25px solid var(--accent-secondary);
+        }
+
+        /* Spin Button Overlay */
+        .spin-btn-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: 4px solid white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 2px 10px rgba(255,255,255,0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            z-index: 5;
+        }
+
+        .spin-btn-center:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 6px 30px rgba(0,0,0,0.4), inset 0 2px 10px rgba(255,255,255,0.3);
+        }
+
+        .spin-btn-center:active {
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+
+        .spin-btn-center.spinning {
+            pointer-events: none;
+            animation: pulse-glow 0.5s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            from { box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 20px var(--accent-glow); }
+            to { box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 40px var(--accent-glow); }
+        }
+
+        /* Winner Display */
+        .winner-display {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 16px;
+            text-align: center;
+            margin-top: 20px;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.5s ease;
+        }
+
+        .winner-display.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .winner-label {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.9);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .winner-prize {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+            width: 100%;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--button-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn:hover {
+            background: var(--button-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px var(--glass-shadow);
+        }
+
+        .btn:active { transform: translateY(0); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border: none;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Action Buttons */
+        .action-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle { position: fixed; top: 20px; right: 20px; z-index: 100; }
+        .theme-btn {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--glass-shadow);
+        }
+        .theme-btn:hover { transform: scale(1.1); }
+        .sun-icon, .moon-icon { position: absolute; transition: all 0.3s ease; }
+        [data-theme="dark"] .sun-icon { opacity: 1; transform: rotate(0deg); }
+        [data-theme="dark"] .moon-icon { opacity: 0; transform: rotate(-90deg); }
+        [data-theme="light"] .sun-icon, :root:not([data-theme]) .sun-icon { opacity: 0; transform: rotate(90deg); }
+        [data-theme="light"] .moon-icon, :root:not([data-theme]) .moon-icon { opacity: 1; transform: rotate(0deg); }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text-primary);
+            color: var(--bg-gradient-1);
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Confetti */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            overflow: hidden;
+        }
+
+        .confetti {
+            position: absolute;
+            opacity: 0;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100%) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .slots-grid {
+                grid-template-columns: 1fr;
+            }
+            .wheel-container {
+                width: 280px;
+                height: 280px;
+            }
+            .action-btns {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Orbs -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <!-- Theme Toggle -->
+    <div class="theme-toggle">
+        <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+            <span class="sun-icon">☀️</span>
+            <span class="moon-icon">🌙</span>
+        </button>
+    </div>
+
+    <!-- Confetti Container -->
+    <div class="confetti-container" id="confettiContainer"></div>
+
+    <div class="container">
+        <div class="glass-card">
+            <!-- Header -->
+            <div class="header">
+                <div class="title">
+                    <span class="title-icon">🎰</span>
+                    Spin-A-Win!
+                </div>
+                <a href="/tools/index.html" class="back-link">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                    Back to KJ Tools
+                </a>
+            </div>
+
+            <!-- Instructions -->
+            <div class="instructions">
+                <div class="instructions-title">
+                    <span>📋</span> How to Use
+                </div>
+                <p><strong>1.</strong> Edit any prize slot below - enter drink specials, food deals, or prizes (e.g., "$5 Jack Shots", "Free Appetizer", "Next Song Choice")</p>
+                <p><strong>2.</strong> Check the box ☑️ next to prizes that should include your extra message (e.g., "For The Next 15 Minutes")</p>
+                <p><strong>3.</strong> Click <strong>SPIN</strong> in the center of the wheel or use the big Spin button</p>
+                <p><strong>4.</strong> Use <strong>Pop Out</strong> to display the wheel on a TV or projector - it remembers its position!</p>
+            </div>
+
+            <!-- Main Layout -->
+            <div class="main-layout">
+                <!-- Prize Slots -->
+                <div class="slots-section">
+                    <div class="section-title">
+                        <span class="icon">🎁</span>
+                        Prize Slots (Check box to add extra message & confetti for a win!)
+                    </div>
+                    <div class="slots-grid" id="slotsGrid">
+                        <!-- Generated by JS -->
+                    </div>
+                    
+                    <!-- Extra Message Input -->
+                    <div class="extra-message-section">
+                        <div class="extra-message-label">
+                            <span>💬</span> Extra Message for Checked Prizes:
+                        </div>
+                        <input type="text" 
+                               class="extra-message-input" 
+                               id="extraMessage" 
+                               placeholder="e.g., For The Next 15 Minutes"
+                               onchange="saveSettings()">
+                        <div class="extra-message-hint">
+                            When a checked prize wins, this message will be added. Example: "$5 Jack Shots" + "For The Next 15 Minutes" = "$5 Jack Shots For The Next 15 Minutes"
+                        </div>
+                    </div>
+
+                    <!-- Venue Welcome Message -->
+                    <div class="extra-message-section">
+                        <div class="extra-message-label">
+                            <span>🏠</span> Venue Welcome Message (shows before spin):
+                        </div>
+                        <textarea class="extra-message-input" 
+                               id="venueMessage" 
+                               rows="3"
+                               placeholder="Welcome message for your venue..."
+                               onchange="saveSettings(); updatePopoutVenueMessage();"></textarea>
+                        <div class="extra-message-hint">
+                            This message displays on the pop-out screen before any prize is won. Great for welcome messages or promotions!
+                        </div>
+                    </div>
+                    
+                    <div class="action-btns">
+                        <button class="btn btn-danger" onclick="clearAllSlots()">
+                            🗑️ Clear All
+                        </button>
+                        <button class="btn" onclick="resetDefaults()">
+                            🔄 Reset Defaults
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Wheel -->
+                <div class="wheel-section">
+                    <div class="section-title">
+                        <span class="icon">🎡</span>
+                        Prize Wheel
+                    </div>
+                    
+                    <div class="wheel-container">
+                        <div class="wheel-pointer"></div>
+                        <div class="wheel-wrapper">
+                            <canvas id="wheelCanvas" width="640" height="640"></canvas>
+                        </div>
+                        <button class="spin-btn-center" id="spinBtn" onclick="spinWheel()">
+                            SPIN!
+                        </button>
+                    </div>
+
+                    <div class="winner-display" id="winnerDisplay">
+                        <div class="winner-label">🎉 Winner!</div>
+                        <div class="winner-prize" id="winnerPrize">-</div>
+                    </div>
+
+                    <div class="btn-row">
+                        <button class="btn btn-primary" onclick="spinWheel()" id="spinBtnLarge">
+                            🎰 Spin the Wheel!
+                        </button>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn" onclick="openPopout()" style="flex:1;">
+                            🖥️ Pop Out Display
+                        </button>
+                        <button class="btn" onclick="saveSettings(); showToast('Settings saved!');" style="flex:1;">
+                            💾 Save Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Default prizes
+        const defaultPrizes = [
+            "Spin Again",
+            "No Prize",
+            "Venue's Choice",
+            "Spin Again",
+            "No Prize",
+            "Venue's Choice",
+            "Spin Again",
+            "No Prize",
+            "Venue's Choice",
+            "Spin Again",
+            "No Prize",
+            "Venue's Choice"
+        ];
+
+        // Wheel segment colors - bright and distinct
+        const segmentColors = [
+            '#ef4444', // red
+            '#f97316', // orange
+            '#eab308', // yellow
+            '#22c55e', // green
+            '#14b8a6', // teal
+            '#06b6d4', // cyan
+            '#3b82f6', // blue
+            '#8b5cf6', // violet
+            '#a855f7', // purple
+            '#ec4899', // pink
+            '#f43f5e', // rose
+            '#6366f1'  // indigo
+        ];
+
+        let prizes = [...defaultPrizes];
+        let includeExtra = new Array(12).fill(false); // Track which prizes include extra message
+        let isSpinning = false;
+        let currentRotation = 0;
+        let popoutWindow = null;
+        
+        // Default venue welcome message
+        const defaultVenueMessage = "Welcome To Our Venue! We hope you are having a great time with us! Please let us know if you need anything!";
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTheme();
+            loadSettings();
+            renderSlots();
+            drawWheel();
+            // Set default venue message if empty
+            const venueInput = document.getElementById('venueMessage');
+            if (venueInput && !venueInput.value) {
+                venueInput.value = defaultVenueMessage;
+            }
+        });
+
+        // Theme
+        function loadTheme() {
+            const saved = localStorage.getItem('spinAWinTheme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('spinAWinTheme', newTheme);
+            
+            if (popoutWindow && !popoutWindow.closed) {
+                popoutWindow.document.documentElement.setAttribute('data-theme', newTheme);
+            }
+        }
+
+        // Render slots
+        function renderSlots() {
+            const grid = document.getElementById('slotsGrid');
+            grid.innerHTML = '';
+            
+            prizes.forEach((prize, index) => {
+                const slot = document.createElement('div');
+                slot.className = 'slot-item';
+                slot.innerHTML = `
+                    <input type="checkbox" 
+                           class="slot-checkbox" 
+                           id="check-${index}"
+                           ${includeExtra[index] ? 'checked' : ''}
+                           onchange="toggleExtra(${index}, this.checked)"
+                           title="Include extra message with this prize">
+                    <div class="slot-number slot-${index + 1}">${index + 1}</div>
+                    <input type="text" class="slot-input" 
+                           value="${prize}" 
+                           placeholder="Enter prize..."
+                           data-index="${index}"
+                           onchange="updatePrize(${index}, this.value)"
+                           onfocus="this.select()">
+                `;
+                grid.appendChild(slot);
+            });
+        }
+
+        function toggleExtra(index, checked) {
+            includeExtra[index] = checked;
+            saveSettings();
+        }
+
+        function updatePrize(index, value) {
+            prizes[index] = value || 'No Prize';
+            drawWheel();
+            updatePopoutWheel();
+            saveSettings();
+        }
+
+        function clearAllSlots() {
+            prizes = prizes.map(() => '');
+            includeExtra = new Array(12).fill(false);
+            document.getElementById('extraMessage').value = '';
+            renderSlots();
+            drawWheel();
+            updatePopoutWheel();
+            showToast('All slots cleared!');
+        }
+
+        function resetDefaults() {
+            prizes = [...defaultPrizes];
+            includeExtra = new Array(12).fill(false);
+            renderSlots();
+            drawWheel();
+            updatePopoutWheel();
+            showToast('Reset to defaults!');
+            saveSettings();
+        }
+
+        // Draw the wheel on canvas
+        function drawWheel(canvas = document.getElementById('wheelCanvas'), rotation = 0) {
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+            const center = size / 2;
+            const radius = center - 10;
+            const segments = 12;
+            const arc = (2 * Math.PI) / segments;
+
+            ctx.clearRect(0, 0, size, size);
+
+            // Draw outer ring/border
+            ctx.beginPath();
+            ctx.arc(center, center, radius + 8, 0, 2 * Math.PI);
+            ctx.fillStyle = '#1e293b';
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(center, center, radius + 5, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 6;
+            ctx.stroke();
+
+            // Draw segments
+            for (let i = 0; i < segments; i++) {
+                const angle = i * arc - Math.PI / 2 + rotation;
+                
+                // Draw segment
+                ctx.beginPath();
+                ctx.moveTo(center, center);
+                ctx.arc(center, center, radius, angle, angle + arc);
+                ctx.closePath();
+                ctx.fillStyle = segmentColors[i];
+                ctx.fill();
+                
+                // Segment border
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Draw text - positioned toward outer edge
+                ctx.save();
+                ctx.translate(center, center);
+                ctx.rotate(angle + arc / 2);
+                ctx.textAlign = 'center';
+                ctx.fillStyle = 'white';
+                ctx.shadowColor = 'rgba(0,0,0,0.6)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 1;
+                
+                let text = prizes[i] || 'Empty';
+                const textRadius = radius * 0.72; // Position text at 72% from center (closer to edge)
+                
+                // Check if we need 2 lines
+                if (text.length > 10) {
+                    // Split into 2 lines
+                    ctx.font = 'bold 18px "Space Grotesk", sans-serif';
+                    const words = text.split(' ');
+                    let line1 = '';
+                    let line2 = '';
+                    
+                    if (words.length >= 2) {
+                        // Split roughly in half by words
+                        const midPoint = Math.ceil(words.length / 2);
+                        line1 = words.slice(0, midPoint).join(' ');
+                        line2 = words.slice(midPoint).join(' ');
+                    } else {
+                        // Single long word - split by characters
+                        const mid = Math.ceil(text.length / 2);
+                        line1 = text.substring(0, mid);
+                        line2 = text.substring(mid);
+                    }
+                    
+                    // Truncate lines if still too long
+                    if (line1.length > 12) line1 = line1.substring(0, 11) + '…';
+                    if (line2.length > 12) line2 = line2.substring(0, 11) + '…';
+                    
+                    ctx.fillText(line1, textRadius, -10);
+                    ctx.fillText(line2, textRadius, 10);
+                } else {
+                    // Single line
+                    ctx.font = 'bold 22px "Space Grotesk", sans-serif';
+                    ctx.fillText(text, textRadius, 0);
+                }
+                
+                ctx.restore();
+            }
+
+            // Center circle decoration
+            ctx.beginPath();
+            ctx.arc(center, center, 50, 0, 2 * Math.PI);
+            ctx.fillStyle = '#1e293b';
+            ctx.fill();
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
+
+        // Spin the wheel
+        function spinWheel() {
+            if (isSpinning) return;
+            
+            isSpinning = true;
+            document.getElementById('spinBtn').classList.add('spinning');
+            document.getElementById('spinBtnLarge').disabled = true;
+            document.getElementById('winnerDisplay').classList.remove('show');
+            
+            // Reset popout to venue message while spinning
+            resetPopoutToVenue();
+            
+            // Random spin: 6-8 full rotations + random position
+            const spins = 6 + Math.random() * 2;
+            const extraDegrees = Math.random() * 360;
+            const totalDegrees = spins * 360 + extraDegrees;
+            
+            const canvas = document.getElementById('wheelCanvas');
+            const duration = 6000; // 6 seconds total
+            const startTime = performance.now();
+            const startRotation = currentRotation;
+            const targetRotation = currentRotation + (totalDegrees * Math.PI / 180);
+
+            // Gentle easing: gradual slowdown throughout the entire spin
+            // Uses a softer curve so deceleration happens smoothly over 6 seconds
+            function easeOutSlow(t) {
+                // Quintic ease-out but gentler - slows down gradually, not abruptly
+                return 1 - Math.pow(1 - t, 2.5);
+            }
+
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easedProgress = easeOutSlow(progress);
+                
+                const currentRot = startRotation + (targetRotation - startRotation) * easedProgress;
+                drawWheel(canvas, currentRot);
+                
+                // Update popout
+                if (popoutWindow && !popoutWindow.closed) {
+                    const popoutCanvas = popoutWindow.document.getElementById('wheelCanvas');
+                    if (popoutCanvas) {
+                        drawWheel(popoutCanvas, currentRot);
+                    }
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    currentRotation = targetRotation;
+                    finishSpin();
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function finishSpin() {
+            isSpinning = false;
+            document.getElementById('spinBtn').classList.remove('spinning');
+            document.getElementById('spinBtnLarge').disabled = false;
+            
+            // Calculate winner - simple direct approach
+            // Segment i is drawn starting at angle: i * (2π/12) - π/2 + rotation
+            // The pointer is at the top which is angle -π/2 (or equivalently 3π/2 or 270°)
+            // We need to find which segment's range includes the pointer
+            
+            const segmentArc = (2 * Math.PI) / 12; // 30 degrees per segment
+            const pointerAngle = -Math.PI / 2; // Top of wheel
+            
+            let winningIndex = 0;
+            
+            for (let i = 0; i < 12; i++) {
+                // Calculate where this segment starts and ends
+                let segStart = i * segmentArc - Math.PI / 2 + currentRotation;
+                let segEnd = segStart + segmentArc;
+                
+                // Normalize angles to 0 to 2π for comparison
+                const normalizeAngle = (a) => {
+                    while (a < 0) a += 2 * Math.PI;
+                    while (a >= 2 * Math.PI) a -= 2 * Math.PI;
+                    return a;
+                };
+                
+                segStart = normalizeAngle(segStart);
+                segEnd = normalizeAngle(segEnd);
+                const pointer = normalizeAngle(pointerAngle);
+                
+                // Check if pointer is within this segment
+                // Handle wrap-around case (segment crosses 0/2π boundary)
+                if (segStart <= segEnd) {
+                    if (pointer >= segStart && pointer < segEnd) {
+                        winningIndex = i;
+                        break;
+                    }
+                } else {
+                    // Segment wraps around
+                    if (pointer >= segStart || pointer < segEnd) {
+                        winningIndex = i;
+                        break;
+                    }
+                }
+            }
+            
+            const basePrize = prizes[winningIndex] || 'Empty';
+            const extraMessage = document.getElementById('extraMessage').value.trim();
+            const prizeLC = basePrize.toLowerCase();
+            
+            // Determine prize type and emoji
+            let emoji = '🎉'; // Default win emoji
+            let labelText = '🎉 WINNER!';
+            let isWin = true;
+            
+            if (prizeLC.includes('spin again') || prizeLC.includes('try again')) {
+                emoji = '💪'; // Determined emoji for spin again
+                labelText = '💪 SPIN AGAIN!';
+                isWin = false;
+            } else if (prizeLC.includes('no prize') || prizeLC.includes('lose') || prizeLC.includes('nothing') || prizeLC.includes('sorry') || prizeLC === 'empty') {
+                emoji = '😢'; // Sad emoji for loss
+                labelText = '😢 NO PRIZE';
+                isWin = false;
+            }
+            
+            // Build full prize message (only add extra message for actual wins with checkbox)
+            let fullPrize = basePrize;
+            if (includeExtra[winningIndex] && extraMessage && isWin) {
+                fullPrize = `${basePrize} ${extraMessage}`;
+            }
+            
+            // Show winner on host screen (just the base prize)
+            document.getElementById('winnerPrize').textContent = basePrize;
+            document.getElementById('winnerDisplay').classList.add('show');
+            
+            // Update popout message box to show winner with large emoji
+            if (popoutWindow && !popoutWindow.closed) {
+                const messageBox = popoutWindow.document.getElementById('messageBox');
+                const messageLabel = popoutWindow.document.getElementById('messageLabel');
+                const messageValue = popoutWindow.document.getElementById('messageValue');
+                const messageEmoji = popoutWindow.document.getElementById('messageEmoji');
+                if (messageBox && messageLabel && messageValue) {
+                    messageBox.classList.add('winner-active');
+                    messageLabel.textContent = labelText;
+                    messageValue.textContent = fullPrize;
+                    if (messageEmoji) {
+                        // Set just the emoji character (without text)
+                        messageEmoji.textContent = emoji;
+                    }
+                }
+            }
+            
+            // Only launch confetti if checkbox is checked (it's a real prize win)
+            if (includeExtra[winningIndex] && isWin) {
+                launchConfetti();
+            }
+            
+            showToast(`${emoji} ${basePrize}!`);
+            saveSettings();
+        }
+
+        // Confetti
+        function launchConfetti() {
+            const container = document.getElementById('confettiContainer');
+            const colors = segmentColors;
+            
+            for (let i = 0; i < 60; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.width = (Math.random() * 12 + 6) + 'px';
+                confetti.style.height = (Math.random() * 12 + 6) + 'px';
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                confetti.style.animation = `confetti-fall ${Math.random() * 2 + 2}s ease-out forwards`;
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 4500);
+            }
+            
+            // Popout confetti
+            if (popoutWindow && !popoutWindow.closed) {
+                const popoutContainer = popoutWindow.document.getElementById('confettiContainer');
+                if (popoutContainer) {
+                    for (let i = 0; i < 60; i++) {
+                        const confetti = popoutWindow.document.createElement('div');
+                        confetti.className = 'confetti';
+                        confetti.style.left = Math.random() * 100 + '%';
+                        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                        confetti.style.width = (Math.random() * 12 + 6) + 'px';
+                        confetti.style.height = (Math.random() * 12 + 6) + 'px';
+                        confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                        confetti.style.animation = `confetti-fall ${Math.random() * 2 + 2}s ease-out forwards`;
+                        confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                        popoutContainer.appendChild(confetti);
+                        setTimeout(() => confetti.remove(), 4500);
+                    }
+                }
+            }
+        }
+
+        // Popout Window
+        function openPopout() {
+            const savedPos = localStorage.getItem('spinAWinPopoutPos');
+            let left = window.screen.width + 50;
+            let top = 50;
+            let width = 900;
+            let height = 750;
+            
+            if (savedPos) {
+                try {
+                    const pos = JSON.parse(savedPos);
+                    left = pos.left || left;
+                    top = pos.top || top;
+                    width = pos.width || width;
+                    height = pos.height || height;
+                } catch (e) {}
+            }
+            
+            popoutWindow = window.open('', 'SpinAWinDisplay', 
+                `width=${width},height=${height},left=${left},top=${top},resizable=yes`
+            );
+            
+            if (!popoutWindow) {
+                alert('Please allow popups to use the Pop Out feature.');
+                return;
+            }
+            
+            const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const venueMsg = document.getElementById('venueMessage').value || defaultVenueMessage;
+            
+            popoutWindow.document.write(`
+<!DOCTYPE html>
+<html lang="en" data-theme="${theme}">
+<head>
+    <meta charset="UTF-8">
+    <title>Spin-A-Win!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient-1: #e0e7ff; --bg-gradient-2: #fce7f3; --bg-gradient-3: #dbeafe;
+            --text-primary: #1e293b; --text-muted: #64748b;
+            --accent-primary: #f59e0b; --accent-secondary: #ec4899;
+            --glass-bg: rgba(255,255,255,0.15);
+            --glass-border: rgba(255,255,255,0.25);
+        }
+        [data-theme="dark"] {
+            --bg-gradient-1: #0f0f23; --bg-gradient-2: #1a1a2e; --bg-gradient-3: #16213e;
+            --text-primary: #f1f5f9; --text-muted: #94a3b8;
+            --accent-primary: #fbbf24; --accent-secondary: #f472b6;
+            --glass-bg: rgba(30,30,50,0.4);
+            --glass-border: rgba(255,255,255,0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg-gradient-1), var(--bg-gradient-2), var(--bg-gradient-3));
+            display: flex;
+            flex-direction: column;
+            padding: 15px 50px;
+            overflow: hidden;
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 10px;
+        }
+        .title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(20px, 3vw, 40px);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            justify-content: center;
+            min-height: 0;
+        }
+        .message-panel {
+            flex: 0 0 380px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 10px 0;
+        }
+        .message-box {
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 45px 35px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .message-box-label {
+            font-size: clamp(14px, 1.5vw, 20px);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+        }
+        .message-box-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(22px, 2.8vw, 38px);
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        /* Winner state */
+        .message-box.winner-active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            animation: winner-glow 1s ease-out;
+        }
+        @keyframes winner-glow {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .message-box.winner-active .message-box-label {
+            color: rgba(255,255,255,0.9);
+        }
+        .message-box.winner-active .message-box-value {
+            color: white;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+            font-size: clamp(26px, 3.2vw, 48px);
+            font-weight: 800;
+        }
+        .message-emoji {
+            font-size: clamp(60px, 10vw, 120px);
+            margin-top: 15px;
+            line-height: 1;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.5s ease;
+        }
+        .message-box.winner-active .message-emoji {
+            opacity: 1;
+            transform: scale(1);
+            animation: emoji-bounce 0.6s ease-out;
+        }
+        @keyframes emoji-bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.3); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        .wheel-panel {
+            flex: 0 1 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-width: 0;
+        }
+        .wheel-container {
+            position: relative;
+            width: min(72vh, 65vw, 620px);
+            height: min(72vh, 65vw, 620px);
+        }
+        #wheelCanvas {
+            width: 100%;
+            height: 100%;
+        }
+        .wheel-pointer {
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        .wheel-pointer::before {
+            content: '';
+            display: block;
+            border-left: 22px solid transparent;
+            border-right: 22px solid transparent;
+            border-top: 42px solid var(--accent-primary);
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+        .wheel-pointer::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 16px solid transparent;
+            border-right: 16px solid transparent;
+            border-top: 30px solid var(--accent-secondary);
+        }
+        .spin-btn-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: 4px solid white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 16px;
+            font-weight: 800;
+            color: white;
+            z-index: 5;
+        }
+        .footer {
+            text-align: center;
+            padding-top: 8px;
+        }
+        .logo {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+        .confetti-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            overflow: hidden;
+        }
+        .confetti { position: absolute; opacity: 0; }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="confetti-container" id="confettiContainer"></div>
+    
+    <div class="header">
+        <div class="title">🎰 Spin-A-Win!</div>
+    </div>
+    
+    <div class="main-content">
+        <div class="message-panel">
+            <div class="message-box" id="messageBox">
+                <div class="message-box-label" id="messageLabel">🏠 WELCOME</div>
+                <div class="message-box-value" id="messageValue">${venueMsg}</div>
+                <div class="message-emoji" id="messageEmoji"></div>
+            </div>
+        </div>
+        
+        <div class="wheel-panel">
+            <div class="wheel-container">
+                <div class="wheel-pointer"></div>
+                <canvas id="wheelCanvas" width="800" height="800"></canvas>
+                <div class="spin-btn-center">SPIN!</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <div class="logo">KaraTrack+ KJ Tools</div>
+    </div>
+</body>
+</html>
+            `);
+            popoutWindow.document.close();
+            
+            // Draw initial wheel state
+            setTimeout(() => {
+                const popoutCanvas = popoutWindow.document.getElementById('wheelCanvas');
+                if (popoutCanvas) {
+                    drawWheel(popoutCanvas, currentRotation);
+                }
+            }, 100);
+            
+            // Save position periodically
+            const savePos = () => {
+                if (popoutWindow && !popoutWindow.closed) {
+                    try {
+                        localStorage.setItem('spinAWinPopoutPos', JSON.stringify({
+                            left: popoutWindow.screenX,
+                            top: popoutWindow.screenY,
+                            width: popoutWindow.outerWidth,
+                            height: popoutWindow.outerHeight
+                        }));
+                    } catch (e) {}
+                }
+            };
+            
+            const posInterval = setInterval(() => {
+                if (popoutWindow && !popoutWindow.closed) {
+                    savePos();
+                } else {
+                    clearInterval(posInterval);
+                }
+            }, 1000);
+            
+            showToast('Display opened! Drag to your TV screen.');
+        }
+
+        function updatePopoutWheel() {
+            if (!popoutWindow || popoutWindow.closed) return;
+            try {
+                const popoutCanvas = popoutWindow.document.getElementById('wheelCanvas');
+                if (popoutCanvas) {
+                    drawWheel(popoutCanvas, currentRotation);
+                }
+            } catch (e) {}
+        }
+
+        // Update venue message in popout
+        function updatePopoutVenueMessage() {
+            if (!popoutWindow || popoutWindow.closed) return;
+            try {
+                const messageBox = popoutWindow.document.getElementById('messageBox');
+                const messageLabel = popoutWindow.document.getElementById('messageLabel');
+                const messageValue = popoutWindow.document.getElementById('messageValue');
+                const messageEmoji = popoutWindow.document.getElementById('messageEmoji');
+                if (messageBox && messageLabel && messageValue) {
+                    // Only update if not showing a winner
+                    if (!messageBox.classList.contains('winner-active')) {
+                        const venueMsg = document.getElementById('venueMessage').value || defaultVenueMessage;
+                        messageLabel.textContent = '🏠 WELCOME';
+                        messageValue.textContent = venueMsg;
+                        if (messageEmoji) messageEmoji.textContent = '';
+                    }
+                }
+            } catch (e) {}
+        }
+
+        // Reset popout to venue message (call before next spin)
+        function resetPopoutToVenue() {
+            if (!popoutWindow || popoutWindow.closed) return;
+            try {
+                const messageBox = popoutWindow.document.getElementById('messageBox');
+                const messageLabel = popoutWindow.document.getElementById('messageLabel');
+                const messageValue = popoutWindow.document.getElementById('messageValue');
+                const messageEmoji = popoutWindow.document.getElementById('messageEmoji');
+                if (messageBox && messageLabel && messageValue) {
+                    messageBox.classList.remove('winner-active');
+                    const venueMsg = document.getElementById('venueMessage').value || defaultVenueMessage;
+                    messageLabel.textContent = '🏠 WELCOME';
+                    messageValue.textContent = venueMsg;
+                    if (messageEmoji) messageEmoji.textContent = '';
+                }
+            } catch (e) {}
+        }
+
+        // Settings
+        function saveSettings() {
+            localStorage.setItem('spinAWinSettings', JSON.stringify({
+                prizes: prizes,
+                includeExtra: includeExtra,
+                extraMessage: document.getElementById('extraMessage').value,
+                venueMessage: document.getElementById('venueMessage').value,
+                rotation: currentRotation
+            }));
+        }
+
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem('spinAWinSettings');
+                if (saved) {
+                    const s = JSON.parse(saved);
+                    if (s.prizes && s.prizes.length === 12) prizes = s.prizes;
+                    if (s.includeExtra && s.includeExtra.length === 12) includeExtra = s.includeExtra;
+                    if (s.extraMessage) document.getElementById('extraMessage').value = s.extraMessage;
+                    if (s.venueMessage) document.getElementById('venueMessage').value = s.venueMessage;
+                    if (s.rotation) currentRotation = s.rotation;
+                }
+            } catch (e) {}
+        }
+
+        // Toast
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+</html>

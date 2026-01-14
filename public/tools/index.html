@@ -144,6 +144,15 @@
             box-shadow: 0 25px 60px -12px rgba(245, 158, 11, 0.4);
         }
 
+        /* Spin-A-Win card gradient */
+        .tool-card.spinner-card .gradient-border {
+            background: linear-gradient(135deg, #22c55e, #eab308, #ef4444, #ec4899);
+        }
+
+        .tool-card.spinner-card:hover .gradient-border {
+            box-shadow: 0 25px 60px -12px rgba(234, 179, 8, 0.4);
+        }
+
         .inner-card {
             position: relative;
             background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a);
@@ -188,6 +197,15 @@
 
         .timer-card .orb-2 {
             background: rgba(239, 68, 68, 0.25);
+        }
+
+        /* Spinner orbs */
+        .spinner-card .orb-1 {
+            background: rgba(234, 179, 8, 0.3);
+        }
+
+        .spinner-card .orb-2 {
+            background: rgba(34, 197, 94, 0.25);
         }
 
         @keyframes float {
@@ -274,6 +292,11 @@
             box-shadow: 0 8px 20px -4px rgba(245, 158, 11, 0.4);
         }
 
+        .spinner-card .icon-box {
+            background: linear-gradient(135deg, #22c55e, #eab308, #ef4444);
+            box-shadow: 0 8px 20px -4px rgba(234, 179, 8, 0.4);
+        }
+
         .card-title {
             color: white;
             font-size: 1.25rem;
@@ -336,6 +359,150 @@
             font-size: 0.8rem;
             color: #64748b;
             margin-top: 4px;
+        }
+
+        /* Spinner Preview Display */
+        .spinner-display {
+            text-align: center;
+        }
+
+        .spinner-display .mini-wheel {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        .spinner-display .wheel-icon {
+            font-size: 2.5rem;
+            animation: spin-preview 8s linear infinite;
+        }
+
+        @keyframes spin-preview {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner-display .spinner-label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .spinner-display .spinner-prize {
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #22c55e, #eab308);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Interactive Spinner on Card */
+        .spinner-interactive {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px !important;
+        }
+
+        .mini-wheel-container {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            flex-shrink: 0;
+        }
+
+        #miniWheelCanvas {
+            width: 90px;
+            height: 90px;
+        }
+
+        .mini-pointer {
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 14px solid #fbbf24;
+            z-index: 5;
+        }
+
+        .spinner-controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mini-spin-btn {
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #f59e0b, #ec4899);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .mini-spin-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .mini-spin-btn:active {
+            transform: translateY(0);
+        }
+
+        .mini-spin-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .mini-prize-display {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fcd34d;
+            text-align: center;
+            min-height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mini-prize-display.winner {
+            animation: prize-pop 0.5s ease;
+        }
+
+        @keyframes prize-pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Make spinner card not act as full link */
+        .spinner-card {
+            cursor: default;
+        }
+
+        .spinner-card:hover {
+            transform: scale(1.02);
+        }
+
+        .spinner-card .action-hint {
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .spinner-card .action-hint:hover {
+            color: #818cf8;
         }
 
         /* Card Footer */
@@ -512,7 +679,7 @@
                 </div>
             </a>
 
-            <!-- Tool 2: Break Timer (NOW ACTIVE!) -->
+            <!-- Tool 2: Break Timer -->
             <a href="/tools/break-timer.html" class="tool-card timer-card">
                 <div class="gradient-border">
                     <div class="inner-card">
@@ -525,7 +692,6 @@
                                 <span class="pulse-dot"></span>
                                 Free
                             </span>
-                            <span class="badge badge-new">NEW</span>
                         </div>
 
                         <div class="card-header">
@@ -563,7 +729,65 @@
                 </div>
             </a>
 
-            <!-- Tool 3: Coming Soon -->
+            <!-- Tool 3: Spin-A-Win! (NEW!) -->
+            <div class="tool-card spinner-card" id="spinnerCard" onclick="window.location.href='/tools/spin-a-win.html'" style="cursor: pointer;">
+                <div class="gradient-border">
+                    <div class="inner-card">
+                        <div class="orb orb-1"></div>
+                        <div class="orb orb-2"></div>
+
+                        <div class="badges">
+                            <span class="badge badge-tool">KJ Tool</span>
+                            <span class="badge badge-free">
+                                <span class="pulse-dot"></span>
+                                Free
+                            </span>
+                            <span class="badge badge-new">NEW</span>
+                        </div>
+
+                        <div class="card-header">
+                            <div class="icon-box">🎰</div>
+                            <div>
+                                <div class="card-title">Spin-A-Win!</div>
+                                <div class="card-subtitle">Prize Wheel</div>
+                            </div>
+                        </div>
+
+                        <div class="display-area">
+                            <div class="display-box spinner-interactive" onclick="event.stopPropagation();">
+                                <div class="mini-wheel-container">
+                                    <canvas id="miniWheelCanvas" width="120" height="120"></canvas>
+                                    <div class="mini-pointer"></div>
+                                </div>
+                                <div class="spinner-controls">
+                                    <button class="mini-spin-btn" id="miniSpinBtn" onclick="spinMiniWheel(event)">
+                                        🎰 SPIN!
+                                    </button>
+                                    <div class="mini-prize-display" id="miniPrizeDisplay">
+                                        Click to spin!
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="feature-tags">
+                                <span class="feature-tag">12 Slots</span>
+                                <span class="feature-tag">Pop-Out</span>
+                                <span class="feature-tag">Confetti</span>
+                            </div>
+                            <div class="action-hint">
+                                Open Full App
+                                <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 18l6-6-6-6"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tool 4: Coming Soon -->
             <div class="tool-card coming-soon-card">
                 <div class="gradient-border">
                     <div class="inner-card">
@@ -647,6 +871,133 @@
                 const secs = timerVal % 60;
                 timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             }, 1000);
+        }
+
+        // Mini Wheel for Spin-A-Win Card
+        const miniPrizes = [
+            "Spin Again", "No Prize", "Venue's Choice", 
+            "$5 Shots!", "Free App!", "Spin Again",
+            "No Prize", "Venue's Choice", "Free Drink!",
+            "Spin Again", "No Prize", "Next Song!"
+        ];
+        
+        const segmentColors = [
+            '#ef4444', '#f97316', '#eab308', '#22c55e',
+            '#14b8a6', '#06b6d4', '#3b82f6', '#8b5cf6',
+            '#a855f7', '#ec4899', '#f43f5e', '#6366f1'
+        ];
+        
+        let miniRotation = 0;
+        let miniSpinning = false;
+        
+        // Draw mini wheel
+        function drawMiniWheel(rotation = 0) {
+            const canvas = document.getElementById('miniWheelCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+            const center = size / 2;
+            const radius = center - 4;
+            const segments = 12;
+            const arc = (2 * Math.PI) / segments;
+            
+            ctx.clearRect(0, 0, size, size);
+            
+            // Outer border
+            ctx.beginPath();
+            ctx.arc(center, center, radius + 3, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Draw segments
+            for (let i = 0; i < segments; i++) {
+                const angle = i * arc - Math.PI / 2 + rotation;
+                
+                ctx.beginPath();
+                ctx.moveTo(center, center);
+                ctx.arc(center, center, radius, angle, angle + arc);
+                ctx.closePath();
+                ctx.fillStyle = segmentColors[i];
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+            
+            // Center circle
+            ctx.beginPath();
+            ctx.arc(center, center, 12, 0, 2 * Math.PI);
+            ctx.fillStyle = '#1e293b';
+            ctx.fill();
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        // Initialize mini wheel
+        drawMiniWheel();
+        
+        // Spin the mini wheel
+        function spinMiniWheel(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            if (miniSpinning) return;
+            
+            miniSpinning = true;
+            const btn = document.getElementById('miniSpinBtn');
+            const prizeDisplay = document.getElementById('miniPrizeDisplay');
+            
+            btn.disabled = true;
+            prizeDisplay.textContent = 'Spinning...';
+            prizeDisplay.classList.remove('winner');
+            
+            // 6 second spin with gradual slowdown
+            const spins = 6 + Math.random() * 2;
+            const extraDegrees = Math.random() * 360;
+            const totalDegrees = spins * 360 + extraDegrees;
+            
+            const duration = 6000;
+            const startTime = performance.now();
+            const startRotation = miniRotation;
+            const targetRotation = miniRotation + (totalDegrees * Math.PI / 180);
+            
+            // Gentle easing: gradual slowdown over the full 6 seconds
+            function easeOut(t) {
+                return 1 - Math.pow(1 - t, 2.5);
+            }
+            
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easedProgress = easeOut(progress);
+                
+                const currentRot = startRotation + (targetRotation - startRotation) * easedProgress;
+                drawMiniWheel(currentRot);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    miniRotation = targetRotation;
+                    miniSpinning = false;
+                    btn.disabled = false;
+                    
+                    // Calculate winner
+                    const normalizedRotation = targetRotation % (2 * Math.PI);
+                    const segmentArc = (2 * Math.PI) / 12;
+                    const pointerAngle = -Math.PI / 2;
+                    const adjustedAngle = (pointerAngle - normalizedRotation + 4 * Math.PI) % (2 * Math.PI);
+                    const winningIndex = Math.floor(adjustedAngle / segmentArc) % 12;
+                    
+                    const prize = miniPrizes[winningIndex];
+                    prizeDisplay.textContent = '🎉 ' + prize;
+                    prizeDisplay.classList.add('winner');
+                }
+            }
+            
+            requestAnimationFrame(animate);
         }
     </script>
 </body>
