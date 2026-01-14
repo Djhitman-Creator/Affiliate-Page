@@ -1,0 +1,21 @@
+{
+  "name": "KaraTrack+ Search",
+  "short_name": "KaraTrack",
+  "description": "Search over 100,000 karaoke tracks from Party Tyme & Karaoke Version",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f23",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
