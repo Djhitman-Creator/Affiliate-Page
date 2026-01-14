@@ -948,6 +948,24 @@ export default function Page() {
 
       <main className="card relative">
 
+        {/* AI Studio Banner - Top of fixed banners */}
+        
+          href="https://studio.karatrack.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-[52px] left-0 right-0 z-40 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 shadow-lg border-t border-yellow-300 hover:from-yellow-300 hover:via-orange-400 hover:to-red-400 transition-all duration-300"
+        >
+          <div className="w-full px-4 py-3">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-2xl animate-bounce">🎤</span>
+              <span className="font-extrabold text-lg text-black drop-shadow-sm">
+                Easily create your own FREE karaoke track with AI in a couple clicks!
+              </span>
+              <span className="text-2xl animate-bounce">✨</span>
+            </div>
+          </div>
+        </a>
+
         {/* Big News Banner - Bottom */}
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg border-t border-purple-700">
           <button
