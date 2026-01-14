@@ -4,6 +4,7 @@ import Providers from './providers'
 import HeaderModals from "@/components/HeaderModals"
 import StructuredData from '@/components/StructuredData'
 import { ThemeToggle } from "@/components/ThemeToggle"
+import MobileNav from "@/components/MobileNav"
 
 export const metadata = {
   title: 'KaraTrack+ | Download Over 100,000 Karaoke Songs | Party Tyme & Karaoke Version',
@@ -60,8 +61,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 </div>
               </div>
 
-              {/* Right side of header with KJ Tools, Help, TOS, and Theme Toggle */}
-              <div className="flex items-center gap-3">
+              {/* Desktop Navigation - hidden on mobile */}
+              <div className="hidden md:flex items-center gap-3">
                 <a href="/tools/index.html" className="kj-tools-pill">
                   <span>🛠️</span>
                   KJ Tools
@@ -73,6 +74,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 </a>
                 <HeaderModals />
                 <ThemeToggle />
+              </div>
+
+              {/* Mobile Navigation - hamburger menu */}
+              <div className="md:hidden flex items-center gap-2">
+                <ThemeToggle />
+                <MobileNav />
               </div>
             </header>
 
