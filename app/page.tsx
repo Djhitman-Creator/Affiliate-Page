@@ -949,7 +949,7 @@ export default function Page() {
       <main className="card relative">
 
         {/* AI Studio Banner - Top of fixed banners */}
-        
+        <a
           href="https://studio.karatrack.com"
           target="_blank"
           rel="noopener noreferrer"
@@ -1246,8 +1246,8 @@ export default function Page() {
           </div>
         )}
 
-        {/* Spacer to push content above banner */}
-        <div className="h-32"></div>
+        {/* Spacer to push content above banners (both AI Studio + Big News) */}
+        <div className="h-40"></div>
 
         {/* Main content ends here */}
       </main>
