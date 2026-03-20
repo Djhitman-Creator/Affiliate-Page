@@ -950,18 +950,18 @@ export default function Page() {
 
         {/* AI Studio Banner - Top of fixed banners */}
         <a
-          href="https://studio.karatrack.com"
+          href="https://karameet.app"
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-[100px] md:bottom-[52px] left-0 right-0 z-40 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 shadow-lg border-t border-yellow-300 hover:from-yellow-300 hover:via-orange-400 hover:to-red-400 transition-all duration-300"
+          className="fixed bottom-[100px] md:bottom-[52px] left-0 right-0 z-40 bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 shadow-lg border-t border-purple-400 hover:from-purple-400 hover:via-pink-400 hover:to-rose-400 transition-all duration-300"
         >
           <div className="w-full px-4 py-3">
             <div className="flex items-center justify-center gap-2">
               <span className="text-2xl animate-bounce">🎤</span>
-              <span className="font-extrabold text-lg text-black drop-shadow-sm text-center">
-                Easily create your own FREE karaoke track with AI in a couple clicks!
+              <span className="font-extrabold text-lg text-white drop-shadow-sm text-center">
+                Join the world's fastest growing karaoke community! Find local shows &amp; get song suggestions — it's FREE!
               </span>
-              <span className="text-2xl animate-bounce">✨</span>
+              <span className="text-2xl animate-bounce">🎶</span>
             </div>
           </div>
         </a>
