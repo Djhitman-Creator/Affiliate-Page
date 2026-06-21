@@ -101,9 +101,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
             {children}
 
-            <footer className="mt-10 text-center text-xs text-neutral-500 dark:text-white/50">
+            <footer className="mt-10 text-center text-xs text-white/60">
               <p>© Rush Monkey Gaming LLC</p>
-              <p className="mt-3 max-w-3xl mx-auto leading-relaxed">
+              <p className="mt-3 max-w-3xl mx-auto leading-relaxed text-white/80">
                 Karatrack is an independent karaoke track search and software company.
                 KaraFun, Party Tyme, and other brand names are trademarks of their
                 respective owners. Karatrack is not affiliated with, sponsored by, or
