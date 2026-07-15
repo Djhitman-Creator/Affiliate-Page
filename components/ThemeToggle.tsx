@@ -1,38 +1,33 @@
 "use client";
 
+// Identical to the main karatrack.com ThemeToggle for a seamless look.
+import { Monitor, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    // Check localStorage first
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark" || savedTheme === "light") {
-      setTheme(savedTheme);
-      document.documentElement.classList.toggle("dark", savedTheme === "dark");
-    } else {
-      // Check system preference if no saved preference
-      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setTheme(isDark ? "dark" : "light");
-      document.documentElement.classList.toggle("dark", isDark);
-    }
-  }, []);
+  useEffect(() => setMounted(true), []);
 
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    document.documentElement.classList.toggle("dark", newTheme === "dark");
-  };
+  if (!mounted) {
+    return <div className="h-10 w-28 rounded-full border border-slate-200 dark:border-slate-800" />;
+  }
 
   return (
-    <button
-      onClick={toggleTheme}
-      className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-      aria-label="Toggle theme"
-    >
-      {theme === "light" ? "🌙" : "☀️"}
-    </button>
+    <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white/80 p-1 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+      <button aria-label="Light mode" onClick={() => setTheme("light")} className={`rounded-full p-2 ${theme === "light" ? "bg-slate-100 dark:bg-slate-800" : ""}`}>
+        <Sun className="h-4 w-4" />
+      </button>
+      <button aria-label="Dark mode" onClick={() => setTheme("dark")} className={`rounded-full p-2 ${theme === "dark" ? "bg-slate-100 dark:bg-slate-800" : ""}`}>
+        <Moon className="h-4 w-4" />
+      </button>
+      <button aria-label="System mode" onClick={() => setTheme("system")} className={`rounded-full p-2 ${theme === "system" ? "bg-slate-100 dark:bg-slate-800" : ""}`}>
+        <Monitor className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
+
+export default ThemeToggle;

@@ -3,16 +3,17 @@ import type { ReactNode } from 'react'
 import Providers from './providers'
 import HeaderModals from "@/components/HeaderModals"
 import StructuredData from '@/components/StructuredData'
-import { ThemeToggle } from "@/components/ThemeToggle"
 import MobileNav from "@/components/MobileNav"
+import { ThemeToggle } from '@/components/ThemeToggle'
+import { LocaleProvider, LanguageSwitcher, NavLinks, LoginPill } from '@/lib/i18n'
 
 export const metadata = {
-  title: 'KaraTrack+ | Download Over 100,000 Karaoke Songs | Party Tyme & Karaoke Version',
-  description: 'Search and download professional karaoke tracks instantly. Over 100,000 songs from Party Tyme Karaoke and Karaoke Version. MP3, MP4, KFN formats. Updated daily with new releases.',
-  keywords: 'karaoke downloads, karaoke tracks, karaoke songs, party tyme karaoke, karaoke version, backing tracks, karaoke mp3, download karaoke, professional karaoke, karaoke with lyrics',
-  authors: [{ name: 'Rush Monkey Gaming LLC' }],
-  creator: 'KaraTrack+',
-  publisher: 'Rush Monkey Gaming LLC',
+  title: 'Karatrack Search Engine | Search 100,000+ Karaoke Songs | Party Tyme & Karaoke Version',
+  description: 'Search professional karaoke tracks instantly. Over 100,000 songs from Party Tyme Karaoke and Karaoke Version. MP3, MP4, KFN formats. Updated daily with new releases.',
+  keywords: 'karaoke downloads, karaoke tracks, karaoke songs, party tyme karaoke, karaoke version, backing tracks, karaoke mp3, download karaoke, professional karaoke, karaoke with lyrics, karaoke search engine',
+  authors: [{ name: 'Rush Monkey LLC' }],
+  creator: 'Karatrack',
+  publisher: 'Rush Monkey LLC',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -30,16 +31,16 @@ export const metadata = {
   },
   manifest: '/site.webmanifest',
   openGraph: {
-    title: 'KaraTrack+ | Professional Karaoke Downloads',
+    title: 'Karatrack Search Engine | Professional Karaoke Downloads',
     description: 'Search over 100,000 karaoke tracks from Party Tyme & Karaoke Version. Download MP3, MP4, KFN formats instantly.',
-    url: 'https://karatrack.com',
-    siteName: 'KaraTrack+',
+    url: 'https://songs.karatrack.com',
+    siteName: 'Karatrack Search Engine',
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'KaraTrack+ | Over 100,000 Karaoke Downloads',
+    title: 'Karatrack Search Engine | 100,000+ Karaoke Downloads',
     description: 'Search professional karaoke tracks from Party Tyme & Karaoke Version. Instant downloads in multiple formats.',
   },
   robots: {
@@ -53,7 +54,7 @@ export const metadata = {
     },
   },
   alternates: {
-    canonical: 'https://karatrack.com',
+    canonical: 'https://songs.karatrack.com',
   },
 }
 
@@ -62,55 +63,63 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <body>
         <Providers>
-          <div className="min-h-screen px-4 md:px-8 py-8">
-            {/* Top header: keep text white in BOTH themes for contrast */}
-            <header className="mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <img
-                  src="/karatrack-logo.png"
-                  alt="KaraTrack+ Logo"
-                  className="w-10 h-10 rounded-2xl object-contain"
-                />
-                <div>
-                  <h1 className="text-xl font-semibold text-white">KaraTrack+</h1>
-                  <p className="text-xs text-white/70 -mt-1">Modern Karaoke Search Engine</p>
+          <LocaleProvider>
+            {/* Sticky header — mirrors the main karatrack.com SiteHeader */}
+            <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+              <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-4">
+                <a href="https://karatrack.com" className="flex items-baseline gap-2 text-xl font-black tracking-tight">
+                  <span>
+                    Kara<span className="text-cyan-500">track</span>
+                  </span>
+                  <span className="hidden text-xs font-semibold uppercase tracking-widest text-slate-400 sm:inline dark:text-slate-500">
+                    Songs
+                  </span>
+                </a>
+
+                {/* Same five links as the main site, pointing back to it */}
+                <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-300 md:flex">
+                  <NavLinks />
+                </nav>
+
+                <div className="flex items-center gap-3">
+                  <div className="hidden items-center gap-3 md:flex">
+                    <HeaderModals />
+                  </div>
+                  <LanguageSwitcher />
+                  <ThemeToggle />
+                  <span className="hidden sm:inline-flex">
+                    <LoginPill />
+                  </span>
+                  <span className="md:hidden">
+                    <MobileNav />
+                  </span>
                 </div>
-              </div>
-
-              {/* Desktop Navigation - hidden on mobile */}
-              <div className="hidden md:flex items-center gap-3">
-                <a href="/tools/index.html" className="kj-tools-pill">
-                  <span>🛠️</span>
-                  KJ Tools
-                  <span className="badge">NEW</span>
-                </a>
-                <a href="/gear" className="kj-tools-pill" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
-                  <span>🛒</span>
-                  Gear
-                </a>
-                <HeaderModals />
-                <ThemeToggle />
-              </div>
-
-              {/* Mobile Navigation - hamburger menu */}
-              <div className="md:hidden flex items-center gap-2">
-                <ThemeToggle />
-                <MobileNav />
               </div>
             </header>
 
-            {children}
+            <main className="mx-auto max-w-7xl px-6 py-8">
+              {children}
+            </main>
 
-            <footer className="mt-10 text-center text-xs text-white/60">
-              <p>© Rush Monkey Gaming LLC</p>
-              <p className="mt-3 max-w-3xl mx-auto leading-relaxed text-white/80">
+            {/* Footer — mirrors the main karatrack.com SiteFooter */}
+            <footer className="border-t border-slate-200 px-6 py-10 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
+              <div className="mx-auto flex max-w-7xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <p>© {new Date().getFullYear()} Rush Monkey LLC</p>
+                <div className="flex gap-4">
+                  <a href="https://karatrack.com/contact" className="hover:text-cyan-500">Contact</a>
+                  <a href="https://karatrack.com/support" className="hover:text-cyan-500">Support</a>
+                  <a href="https://karatrack.com" className="hover:text-cyan-500">Karatrack.com</a>
+                </div>
+              </div>
+              <p className="mx-auto mt-6 max-w-7xl text-xs leading-relaxed text-slate-400 dark:text-slate-500">
                 Karatrack is an independent karaoke track search and software company.
-                KaraFun, Party Tyme, and other brand names are trademarks of their
+                Party Tyme, Karaoke Version, and other brand names are trademarks of their
                 respective owners. Karatrack is not affiliated with, sponsored by, or
                 endorsed by those companies.
               </p>
             </footer>
-          </div>
+            <StructuredData />
+          </LocaleProvider>
         </Providers>
       </body>
     </html>

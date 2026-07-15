@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState, } from 'react';
 import SEOContent from '@/components/SEOContent'
 import ProductManager from '@/components/ProductManager';
+import { useT } from '@/lib/i18n';
 
 type Row = {
   id?: string | number | null;
@@ -110,6 +111,7 @@ function JetSpinner({ size = 24 }: { size?: number }) {
 }
 
 function BuyButton({ item }: { item: Row }) {
+  const { t } = useT();
   const href = urlOf(item);
   if (!href) return null;
   const label = item.brandDisplay ?? item.brand ?? "Store";
@@ -119,23 +121,22 @@ function BuyButton({ item }: { item: Row }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`View / Buy on ${label}`}
-      className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition
-                 hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400
-                 focus:ring-offset-2 focus:ring-offset-black/10
-                 dark:bg-emerald-700 dark:hover:bg-emerald-600 dark:focus:ring-offset-white/10"
+      aria-label={`${t('viewBuy')} — ${label}`}
+      className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-bold shadow-sm transition hover:brightness-110"
+      style={{ background: 'var(--copper)', color: 'var(--on-accent)' }}
     >
       <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
         <path d="M3 3h2l.4 2M7 13h6a2 2 0 0 0 1.94-1.5l1.2-4.5A1 1 0 0 0 15.2 6H6.1M7 13l-2 4m2-4l2 4m6-4l-2 4" />
       </svg>
-      <span>View / Buy</span>
+      <span>{t('viewBuy')}</span>
     </a>
   );
 }
 
 
-// Shows today's date (no time), forced white text both themes
+// Shows today's date (no time)
 function LastUpdatedNote({ className = "" }: { className?: string }) {
+  const { t } = useT();
   const [dateStr, setDateStr] = useState("");
 
   useEffect(() => {
@@ -149,9 +150,9 @@ function LastUpdatedNote({ className = "" }: { className?: string }) {
   }, []);
 
   return (
-    <div className={`mb-1 text-xs md:text-sm font-medium !text-white [color:#fff] ${className}`}>
-      Last updated{" "}
-      <span className="font-semibold !text-white [color:#fff]">
+    <div className={`mb-1 text-xs md:text-sm font-medium ${className}`} style={{ color: 'var(--text-dim)' }}>
+      {t('lastUpdated')}{" "}
+      <span className="mono font-semibold" style={{ color: 'var(--amber)' }}>
         {dateStr}
       </span>
     </div>
@@ -160,16 +161,23 @@ function LastUpdatedNote({ className = "" }: { className?: string }) {
 
 /* ---------- Search Loading Overlay (moved outside) ---------- */
 function SearchLoadingOverlay({ isSearching, searchProgress }: { isSearching: boolean; searchProgress: string }) {
+  const { t } = useT();
   if (!isSearching) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl flex flex-col items-center space-y-4 min-w-[250px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div
+        className="flex min-w-[250px] flex-col items-center space-y-4 rounded-3xl p-8 shadow-2xl"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+      >
         {/* Spinner */}
         <div className="relative">
-          <div className="w-16 h-16 border-4 border-gray-200 dark:border-gray-700 rounded-full animate-spin border-t-blue-500 dark:border-t-blue-400"></div>
+          <div
+            className="h-16 w-16 animate-spin rounded-full border-4"
+            style={{ borderColor: 'var(--border-2)', borderTopColor: 'var(--copper)' }}
+          ></div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <svg className="w-8 h-8 text-blue-500 dark:text-blue-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-8 w-8 animate-pulse" style={{ color: 'var(--copper)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
             </svg>
           </div>
@@ -177,11 +185,11 @@ function SearchLoadingOverlay({ isSearching, searchProgress }: { isSearching: bo
 
         {/* Text */}
         <div className="text-center">
-          <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            Searching for tracks...
+          <p className="text-lg font-semibold" style={{ color: 'var(--text)' }}>
+            {t('searchingTracks')}
           </p>
           {searchProgress && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+            <p className="mt-2 text-sm" style={{ color: 'var(--text-dim)' }}>
               {searchProgress}
             </p>
           )}
@@ -189,9 +197,9 @@ function SearchLoadingOverlay({ isSearching, searchProgress }: { isSearching: bo
 
         {/* Animated dots */}
         <div className="flex space-x-1">
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div className="h-2 w-2 animate-bounce rounded-full" style={{ background: 'var(--copper)', animationDelay: '0ms' }}></div>
+          <div className="h-2 w-2 animate-bounce rounded-full" style={{ background: 'var(--copper)', animationDelay: '150ms' }}></div>
+          <div className="h-2 w-2 animate-bounce rounded-full" style={{ background: 'var(--copper)', animationDelay: '300ms' }}></div>
         </div>
       </div>
     </div>
@@ -209,6 +217,7 @@ interface LegacyDialogProps {
 }
 
 function LegacyDialog({ open, onClose, artist, title, discs, buttonRect }: LegacyDialogProps) {
+  const { t } = useT();
   const dialogRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ top: 0, left: 0 });
 
@@ -265,11 +274,11 @@ function LegacyDialog({ open, onClose, artist, title, discs, buttonRect }: Legac
           }}
         >
           <div className="text-lg font-semibold mb-2">
-            Legacy discs — {artist} — {title}
+            {t('legacyDiscs')} — {artist} — {title}
           </div>
           <div className="max-h-64 overflow-auto rounded border border-black/10 dark:border-white/10 p-3 text-sm leading-6">
             {discs.length === 0 ? (
-              <div className="opacity-70">No legacy discs found.</div>
+              <div className="opacity-70">{t('noLegacyDiscs')}</div>
             ) : (
               <ul className="list-disc pl-5">
                 {discs.map((d: string, i: number) => <li key={i}>{d}</li>)}
@@ -281,7 +290,7 @@ function LegacyDialog({ open, onClose, artist, title, discs, buttonRect }: Legac
               className="rounded-xl px-4 py-2 bg-black text-white dark:bg-white dark:text-black"
               onClick={onClose}
             >
-              Close
+              {t('close')}
             </button>
           </div>
         </div>
@@ -295,11 +304,11 @@ function LegacyDialog({ open, onClose, artist, title, discs, buttonRect }: Legac
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative z-10 w-full max-w-lg rounded-2xl p-5 bg-white text-black dark:bg-neutral-900 dark:text-white shadow-xl">
         <div className="text-lg font-semibold mb-2">
-          Legacy discs — {artist} — {title}
+          {t('legacyDiscs')} — {artist} — {title}
         </div>
         <div className="max-h-64 overflow-auto rounded border border-black/10 dark:border-white/10 p-3 text-sm leading-6">
           {discs.length === 0 ? (
-            <div className="opacity-70">No legacy discs found.</div>
+            <div className="opacity-70">{t('noLegacyDiscs')}</div>
           ) : (
             <ul className="list-disc pl-5">
               {discs.map((d: string, i: number) => <li key={i}>{d}</li>)}
@@ -311,7 +320,7 @@ function LegacyDialog({ open, onClose, artist, title, discs, buttonRect }: Legac
             className="rounded-xl px-4 py-2 bg-black text-white dark:bg-white dark:text-black"
             onClick={onClose}
           >
-            Close
+            {t('close')}
           </button>
         </div>
       </div>
@@ -327,15 +336,31 @@ interface AdminSectionProps {
 
 function AdminSection({ isUnlocked, setIsUnlocked }: AdminSectionProps) {
   const [password, setPassword] = useState('');
+  const [checking, setChecking] = useState(false);
 
-  const handleUnlock = (e: React.FormEvent) => {
+  // The password is verified SERVER-SIDE against the ADMIN_PASSWORD env var
+  // (see /api/admin/unlock). It used to be hardcoded here in the client
+  // bundle, where anyone could read it with view-source.
+  const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'Powder01!') {
-      setIsUnlocked(true);
-      setPassword('');
-    } else {
-      alert('Incorrect password');
-      setPassword('');
+    setChecking(true);
+    try {
+      const res = await fetch('/api/admin/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) {
+        setIsUnlocked(true);
+        setPassword('');
+      } else {
+        alert('Incorrect password');
+        setPassword('');
+      }
+    } catch {
+      alert('Could not verify right now. Please try again.');
+    } finally {
+      setChecking(false);
     }
   };
 
@@ -350,8 +375,8 @@ function AdminSection({ isUnlocked, setIsUnlocked }: AdminSectionProps) {
             onChange={(e) => setPassword(e.target.value)}
             className="rounded-lg bg-white/10 px-3 py-1 text-sm text-white placeholder:text-white/40 focus:bg-white/20 focus:outline-none"
           />
-          <button type="submit" className="rounded-lg bg-white/10 px-4 py-1 text-sm text-white hover:bg-white/20">
-            Unlock Admin
+          <button type="submit" disabled={checking} className="rounded-lg bg-white/10 px-4 py-1 text-sm text-white hover:bg-white/20 disabled:opacity-50">
+            {checking ? 'Checking…' : 'Unlock Admin'}
           </button>
         </form>
       </div>
@@ -431,194 +456,6 @@ function AdminSection({ isUnlocked, setIsUnlocked }: AdminSectionProps) {
   );
 }
 
-/* ---------- Signup Modal Component (FIXED VERSION) ---------- */
-interface SignupModalProps {
-  showSignupModal: boolean;
-  setShowSignupModal: (value: boolean) => void;
-  signupName: string;
-  setSignupName: (value: string) => void;
-  signupEmail: string;
-  setSignupEmail: (value: string) => void;
-  signupPhone: string;
-  setSignupPhone: (value: string) => void;
-  signupSubmitting: boolean;
-  setSignupSubmitting: (value: boolean) => void;
-  signupSuccess: boolean;
-  setSignupSuccess: (value: boolean) => void;
-}
-
-function SignupModal({
-  showSignupModal,
-  setShowSignupModal,
-  signupName,
-  setSignupName,
-  signupEmail,
-  setSignupEmail,
-  signupPhone,
-  setSignupPhone,
-  signupSubmitting,
-  setSignupSubmitting,
-  signupSuccess,
-  setSignupSuccess
-}: SignupModalProps) {
-  if (!showSignupModal) return null;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSignupSubmitting(true);
-
-    try {
-      const response = await fetch('/api/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: signupName,
-          email: signupEmail,
-          phone: signupPhone,
-          timestamp: new Date().toISOString()
-        })
-      });
-      
-
-      if (response.ok) {
-        setSignupSuccess(true);
-        // Keep modal open longer to show success message
-        setTimeout(() => {
-          setShowSignupModal(false);
-          setSignupSuccess(false);
-          setSignupName('');
-          setSignupEmail('');
-          setSignupPhone('');
-        }, 3000); // Increased from 2000 to 3000ms
-      } else {
-        // Handle error
-        alert('There was an error submitting your signup. Please try again.');
-      }
-    } catch (error) {
-      console.error('Signup error:', error);
-      alert('There was an error submitting your signup. Please try again.');
-    } finally {
-      setSignupSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            🎉 Be First to Know!
-          </h2>
-          <button
-            onClick={() => setShowSignupModal(false)}
-            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {signupSuccess ? (
-          <div className="text-center py-8">
-            <div className="text-green-500 text-6xl mb-4 animate-bounce">✓</div>
-            <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              Thank you for signing up!
-            </p>
-            <p className="text-gray-600 dark:text-gray-400">
-              We'll notify you first when the big news drops!
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-500 mt-4">
-              This window will close automatically...
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={signupName}
-                onChange={(e) => setSignupName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                         bg-white dark:bg-gray-700 
-                         text-gray-900 dark:text-white 
-                         placeholder-gray-400 dark:placeholder-gray-500
-                         focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="John Doe"
-                disabled={signupSubmitting}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Email *
-              </label>
-              <input
-                type="email"
-                required
-                value={signupEmail}
-                onChange={(e) => setSignupEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                         bg-white dark:bg-gray-700 
-                         text-gray-900 dark:text-white 
-                         placeholder-gray-400 dark:placeholder-gray-500
-                         focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="john@example.com"
-                disabled={signupSubmitting}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Phone (Optional)
-              </label>
-              <input
-                type="tel"
-                value={signupPhone}
-                onChange={(e) => setSignupPhone(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                         bg-white dark:bg-gray-700 
-                         text-gray-900 dark:text-white 
-                         placeholder-gray-400 dark:placeholder-gray-500
-                         focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="555-123-4567"
-                disabled={signupSubmitting}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={signupSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 
-                       rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed
-                       flex items-center justify-center"
-            >
-              {signupSubmitting ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Submitting...
-                </>
-              ) : (
-                'Sign Me Up!'
-              )}
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
-  );
-}
-
 /* ---------- page ---------- */
 export default function Page() {
   // input fields (no debounce)
@@ -659,21 +496,16 @@ export default function Page() {
   // Checkbox state for legacy search
   const [searchLegacy, setSearchLegacy] = useState(false);
 
-  // Signup modal states
-  const [showSignupModal, setShowSignupModal] = useState(false);
-  const [signupName, setSignupName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPhone, setSignupPhone] = useState('');
-  const [signupSubmitting, setSignupSubmitting] = useState(false);
-  const [signupSuccess, setSignupSuccess] = useState(false);
+  // Admin state
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
 
   // YouTube state
   const [ytLoading, setYtLoading] = useState(false);
   const [ytHits, setYtHits] = useState<YTHit[]>([]);
   const [ytDebug, setYtDebug] = useState<any[]>([]);
 
-  // Admin state
-  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
+  // i18n
+  const { t } = useT();
 
   // simple key to trigger fetch sequence order
   const reqId = useRef(0);
@@ -702,9 +534,8 @@ export default function Page() {
       console.log('SEARCH RUNNING - artistQ:', artistQ, 'titleQ:', titleQ);
       setLoading(true);
 
-      console.log('Search running - artist:', artistQ, 'title:', titleQ);
       setIsSearching(true);
-      setSearchProgress('Initializing search...');
+      setSearchProgress(t('progressInit'));
 
       if (!artistQ.trim() && !titleQ.trim()) {
         if (!cancelled && my === reqId.current) {
@@ -718,7 +549,7 @@ export default function Page() {
       }
 
       try {
-        setSearchProgress('Searching Party Tyme, Karaoke Version, and YouTube...');
+        setSearchProgress(t('progressSources'));
         // still using your server route; client refines results
         const url = `/api/tracks?q=${encodeURIComponent(
           (artistQ + ' ' + titleQ).trim()
@@ -728,7 +559,7 @@ export default function Page() {
         const res = await fetch(url, { cache: 'no-store' });
         console.log('Response status:', res.status);
 
-        setSearchProgress('Processing search results...');
+        setSearchProgress(t('progressProcessing'));
         const json = await res.json();
         console.log('Response data:', json);
 
@@ -788,7 +619,7 @@ export default function Page() {
           if (searchLegacy) {
             console.log('Legacy search RUNNING because checkbox is checked');
             try {
-              setSearchProgress('Checking legacy disc database...');
+              setSearchProgress(t('progressLegacy'));
 
               // Get unique artist/title combinations from results
               const uniqueTracks = new Map();
@@ -948,38 +779,6 @@ export default function Page() {
 
       <main className="card relative">
 
-        {/* AI Studio Banner - Top of fixed banners */}
-        <a
-          href="https://karameet.app"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="fixed bottom-[100px] md:bottom-[52px] left-0 right-0 z-40 bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 shadow-lg border-t border-purple-400 hover:from-purple-400 hover:via-pink-400 hover:to-rose-400 transition-all duration-300"
-        >
-          <div className="w-full px-4 py-3">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-2xl animate-bounce">🎤</span>
-              <span className="font-extrabold text-lg text-white drop-shadow-sm text-center">
-                Join the world's fastest growing karaoke community! Find local shows &amp; get song suggestions — it's FREE!
-              </span>
-              <span className="text-2xl animate-bounce">🎶</span>
-            </div>
-          </div>
-        </a>
-
-        {/* Big News Banner - Bottom */}
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg border-t border-purple-700">
-          <button
-            onClick={() => setShowSignupModal(true)}
-            className="w-full px-4 py-3 text-white hover:bg-white/10 transition-colors"
-          >
-            <div className="flex items-center justify-center gap-2">
-              <span className="animate-pulse">🎉</span>
-              <span className="font-bold text-lg">Big News Coming Soon! Sign up to be notified first!</span>
-              <span className="animate-pulse">🎉</span>
-            </div>
-          </button>
-        </div>
-
         {/* Main content */}
 
         { }
@@ -988,83 +787,82 @@ export default function Page() {
             <LastUpdatedNote className="md:col-span-3" />
 
             <input
-              className="input !bg-white !text-black placeholder:text-neutral-500
-                       dark:!bg-neutral-900 dark:!text-white dark:placeholder:text-white/40"
-              placeholder="Artist (partial OK)"
+              className="input"
+              placeholder={t('artistPlaceholder')}
               value={artistInput}
               onChange={(e) => setArtistInput(e.target.value)}
             />
             <input
-              className="input !bg-white !text-black placeholder:text-neutral-500
-                       dark:!bg-neutral-900 dark:!text-white dark:placeholder:text-white/40"
-              placeholder="Title (partial OK)"
+              className="input"
+              placeholder={t('titlePlaceholder')}
               value={titleInput}
               onChange={(e) => setTitleInput(e.target.value)}
             />
             <button
               type="submit"
-              className="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm
-                       hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-400
-                       focus:ring-offset-2 focus:ring-offset-black/10
-                       dark:bg-white dark:text-black dark:hover:bg-white/90 dark:focus:ring-white/40"
-              aria-label="Search"
+              className="rounded-full px-6 py-2 text-sm font-bold shadow-sm transition hover:brightness-110"
+              style={{ background: 'var(--copper)', color: 'var(--on-accent)' }}
+              aria-label={t('search')}
             >
-              Search
+              {t('search')}
             </button>
           </div>
 
-          {/* Legacy search checkbox - prettier version */}
+          {/* Legacy search checkbox */}
           <div className="mt-3 flex items-center">
             <input
               type="checkbox"
               id="searchLegacy"
               checked={searchLegacy}
               onChange={(e) => setSearchLegacy(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500
-               dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-purple-400"
+              className="h-4 w-4 rounded"
+              style={{ accentColor: 'var(--copper)' }}
             />
             <label
               htmlFor="searchLegacy"
-              className="ml-2 text-sm text-white dark:text-gray-300 cursor-pointer select-none flex items-center"
+              className="ml-2 flex cursor-pointer select-none items-center text-sm"
+              style={{ color: 'var(--text-dim)' }}
             >
               <span className="mr-1">💿</span>
-              Search legacy disc database
-              <span className="ml-1 text-xs text-white/70 dark:text-gray-400">(slower)</span>
+              {t('legacyLabel')}
+              <span className="ml-1 text-xs" style={{ color: 'var(--text-muted)' }}>{t('slower')}</span>
             </label>
           </div>
         </form>
 
         {/* Results count */}
-        <div className="mb-2 text-sm text-white dark:text-white/70">
+        <div className="mb-2 text-sm" style={{ color: 'var(--text-dim)' }}>
           {loading
-            ? 'Searching…'
-            : `${data.items.length} shown of ${data.total}`}
+            ? t('searching')
+            : t('shownOf', { shown: data.items.length, total: data.total })}
         </div>
 
         {/* Zero-results notice */}
         {!loading && (artistQ.trim().length > 0 || titleQ.trim().length > 0) && data.total === 0 && (
-          <div className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 px-3 py-2 text-sm text-amber-900
-                        dark:border-amber-400/30 dark:bg-amber-950/40 dark:text-amber-200">
-            No results. Tip: search <b>Artist</b> and/or <b>Title</b>. Partial words are OK.
+          <div
+            className="mb-4 rounded-2xl px-4 py-3 text-sm"
+            style={{ background: 'var(--surface-2)', borderLeft: '3px solid var(--copper)', color: 'var(--text-dim)' }}
+          >
+            {t('noResults')}
           </div>
         )}
 
         {/* Results table */}
-        <div className="overflow-auto rounded-2xl border border-black/10 bg-white dark:border-white/10 dark:bg-neutral-900">
+        <div className="panel overflow-auto">
           <table className="table">
             <thead>
               <tr>
-                <th className="cursor-pointer select-none text-black dark:text-white" onClick={() => toggleSort('artist')}>
-                  Artist {sortBy === 'artist' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                <th className="cursor-pointer select-none" onClick={() => toggleSort('artist')}>
+                  {t('artist')} {sortBy === 'artist' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
                 </th>
-                <th className="cursor-pointer select-none text-black dark:text-white" onClick={() => toggleSort('title')}>
-                  Title {sortBy === 'title' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                <th className="cursor-pointer select-none" onClick={() => toggleSort('title')}>
+                  {t('title')} {sortBy === 'title' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
                 </th>
-                <th className="cursor-pointer select-none text-black dark:text-white" onClick={() => toggleSort('brand')}>
-                  Brand {sortBy === 'brand' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                <th className="cursor-pointer select-none" onClick={() => toggleSort('brand')}>
+                  {t('brand')} {sortBy === 'brand' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
                 </th>
-                <th className="text-black dark:text-white">Legacy</th>
-                <th className="text-black dark:text-white pr-4">Buy</th>
+                <th>{t('legacy')}</th>
+                <th className="pr-4">{t('buy')}</th>
               </tr>
             </thead>
             <tbody>
@@ -1130,17 +928,17 @@ export default function Page() {
 
         {/* YouTube block */}
         {(artistQ.trim() || titleQ.trim()) && (
-          <div className="mt-6 rounded-2xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-neutral-900">
-            <div className="mb-3 text-sm text-black dark:text-white">
-              YouTube Official Channels for{' '}
-              <span className="font-semibold">
+          <div className="panel mt-6 p-4">
+            <div className="mb-3 text-sm" style={{ color: 'var(--text-dim)' }}>
+              {t('ytFor')}{' '}
+              <span className="font-semibold" style={{ color: 'var(--text)' }}>
                 "{titleQ.trim() || artistQ.trim()}"
               </span>
             </div>
 
             {ytLoading && (
-              <div className="flex items-center gap-3 text-sm text-black dark:text-white/70">
-                <JetSpinner size={20} /> Checking YouTube…
+              <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--text-dim)' }}>
+                <span className="spin-copper"><JetSpinner size={20} /></span> {t('ytChecking')}
               </div>
             )}
 
@@ -1154,8 +952,8 @@ export default function Page() {
                     <div className="min-w-0 flex items-center gap-3">
                       <img src={ytThumb(hit.videoId, 'mq')} alt={hit.title} className="w-24 rounded-md" />
                       <div>
-                        <div className="text-sm font-medium text-black dark:text-white">{hit.label}</div>
-                        <div className="truncate text-xs text-black dark:text-white/70">{hit.title}</div>
+                        <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{hit.label}</div>
+                        <div className="truncate text-xs" style={{ color: 'var(--text-dim)' }}>{hit.title}</div>
                       </div>
                     </div>
 
@@ -1164,7 +962,7 @@ export default function Page() {
                         onClick={async () => {
                           await navigator.clipboard.writeText(hit.url);
                           const el = document.createElement('div');
-                          el.textContent = 'Copied!';
+                          el.textContent = t('copied');
                           Object.assign(el.style, {
                             position: 'fixed',
                             bottom: '16px',
@@ -1179,24 +977,20 @@ export default function Page() {
                           document.body.appendChild(el);
                           setTimeout(() => el.remove(), 900);
                         }}
-                        className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold
-                                 shadow-sm border border-black/10 bg-blue-600 text-white
-                                 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400
-                                 focus:ring-offset-2 focus:ring-offset-black/10 dark:border-white/10"
+                        className="btn"
+                        style={{ fontSize: '0.75rem', padding: '6px 12px' }}
                       >
-                        Copy
+                        {t('copy')}
                       </button>
 
                       <a
                         href={hit.url}
                         target="_blank"
                         rel="noopener"
-                        className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold
-                                 shadow-sm border border-black/10 bg-[rgb(68,0,1)] text-white
-                                 hover:bg-[rgb(68,0,1)]/90 focus:outline-none focus:ring-2 focus:ring-[rgba(68,0,1,0.6)]
-                                 focus:ring-offset-2 focus:ring-offset-black/10 dark:border-white/10"
+                        className="inline-flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-bold shadow-sm transition hover:brightness-110"
+                        style={{ background: 'var(--burnished)', color: '#fff' }}
                       >
-                        View
+                        {t('view')}
                       </a>
                     </div>
                   </li>
@@ -1205,7 +999,7 @@ export default function Page() {
             )}
 
             {!ytLoading && ytHits.length === 0 && (
-              <div className="text-sm text-black dark:text-white/70">No official channel videos found.</div>
+              <div className="text-sm" style={{ color: 'var(--text-dim)' }}>{t('ytNone')}</div>
             )}
 
             {ytDebug.length > 0 && (
@@ -1234,11 +1028,10 @@ export default function Page() {
                     href={`https://www.youtube.com/results?search_query=${encodeURIComponent((qYT || '').trim() + ' karaoke')}`}
                     target="_blank"
                     rel="noopener"
-                    className="block w-full rounded-xl bg-[rgb(68,0,1)] px-4 py-3 text-center text-sm font-semibold text-white
-                 hover:bg-[rgb(68,0,1)]/90 focus:outline-none focus:ring-2 focus:ring-[rgba(68,0,1,0.6)]
-                 focus:ring-offset-2 focus:ring-offset-black/10 dark:focus:ring-offset-white/10"
+                    className="block w-full rounded-full px-4 py-3 text-center text-sm font-bold transition hover:brightness-110"
+                    style={{ background: 'var(--burnished)', color: '#fff' }}
                   >
-                    General Results for "{label}" on YouTube
+                    {t('ytGeneral')} "{label}"
                   </a>
                 );
               })()}
@@ -1246,8 +1039,8 @@ export default function Page() {
           </div>
         )}
 
-        {/* Spacer to push content above banners (both AI Studio + Big News) */}
-        <div className="h-60"></div>
+        {/* Spacer above footer */}
+        <div className="h-8"></div>
 
         {/* Main content ends here */}
       </main>
@@ -1260,22 +1053,6 @@ export default function Page() {
         title={legacyDialog.title}
         discs={legacyDialog.discs}
         buttonRect={legacyDialog.buttonRect}
-      />
-
-      {/* Signup Modal - Now using props */}
-      <SignupModal
-        showSignupModal={showSignupModal}
-        setShowSignupModal={setShowSignupModal}
-        signupName={signupName}
-        setSignupName={setSignupName}
-        signupEmail={signupEmail}
-        setSignupEmail={setSignupEmail}
-        signupPhone={signupPhone}
-        setSignupPhone={setSignupPhone}
-        signupSubmitting={signupSubmitting}
-        setSignupSubmitting={setSignupSubmitting}
-        signupSuccess={signupSuccess}
-        setSignupSuccess={setSignupSuccess}
       />
 
       {/* SEO Content Section - Added for search engine optimization */}

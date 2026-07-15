@@ -1,16 +1,18 @@
 export default function StructuredData() {
+  const BASE = 'https://songs.karatrack.com'
+
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "KaraTrack+",
-    "alternateName": "KaraTrack Plus",
-    "url": "https://karatrack.com",
-    "description": "Professional karaoke search engine with over 58,000 tracks from Party Tyme and Karaoke Version",
+    "name": "Karatrack Search Engine",
+    "alternateName": "Karatrack Songs",
+    "url": BASE,
+    "description": "Professional karaoke search engine with over 100,000 tracks from Party Tyme and Karaoke Version",
     "potentialAction": {
       "@type": "SearchAction",
       "target": {
         "@type": "EntryPoint",
-        "urlTemplate": "https://karatrack.com?q={search_term_string}"
+        "urlTemplate": `${BASE}?q={search_term_string}`
       },
       "query-input": "required name=search_term_string"
     }
@@ -19,9 +21,9 @@ export default function StructuredData() {
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "Rush Monkey Gaming LLC",
+    "name": "Rush Monkey LLC",
     "url": "https://karatrack.com",
-    "logo": "https://karatrack.com/karatrack-logo.png",
+    "logo": `${BASE}/karatrack-logo.png`,
     "sameAs": [
       "https://www.facebook.com/karatrackplus"
     ],
@@ -36,30 +38,16 @@ export default function StructuredData() {
   const webApplicationSchema = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "KaraTrack+ Karaoke Search",
+    "name": "Karatrack Search Engine",
     "description": "Search and download professional karaoke tracks from Party Tyme and Karaoke Version",
-    "url": "https://karatrack.com",
+    "url": BASE,
     "applicationCategory": "EntertainmentApplication",
     "applicationSubCategory": "MusicApplication",
     "operatingSystem": "Any",
     "browserRequirements": "Requires JavaScript. Requires HTML5.",
-    "offers": {
-      "@type": "AggregateOffer",
-      "offerCount": "58000",
-      "lowPrice": "0.99",
-      "highPrice": "3.99",
-      "priceCurrency": "USD",
-      "availability": "https://schema.org/InStock"
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "ratingCount": "1250",
-      "reviewCount": "850"
-    },
     "provider": {
       "@type": "Organization",
-      "name": "Rush Monkey Gaming LLC"
+      "name": "Rush Monkey LLC"
     }
   }
 
@@ -69,7 +57,7 @@ export default function StructuredData() {
     "mainEntity": [
       {
         "@type": "Question",
-        "name": "How do I search for karaoke downloads on KaraTrack+?",
+        "name": "How do I search for karaoke downloads on the Karatrack Search Engine?",
         "acceptedAnswer": {
           "@type": "Answer",
           "text": "Use the separate Artist and Title fields to search. Type partial words like 'Fra Sin' for Frank Sinatra in the Artist field, or 'Fl Me Moon' for Fly Me to the Moon in the Title field. Avoid special characters and common words like 'The' or 'And' for best results."
@@ -80,12 +68,12 @@ export default function StructuredData() {
         "name": "What karaoke file formats are available for download?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Multiple formats are available including MP3+G (audio with graphics), MP4 (video karaoke), KFN (Karafun format), CDG (CD+Graphics), MP3 (backing tracks), and MIDI. Karaoke-Version offers multiple formats after purchase, while Party Tyme requires format selection before purchase."
+          "text": "Multiple formats are available including MP3+G (audio with graphics), MP4 (video karaoke), KFN (Karafun format), CDG (CD+Graphics), MP3 (backing tracks), and MIDI. Karaoke Version offers multiple formats after purchase, while Party Tyme requires format selection before purchase."
         }
       },
       {
         "@type": "Question",
-        "name": "Are KaraTrack+ karaoke downloads legal for public performance?",
+        "name": "Are these karaoke downloads legal for public performance?",
         "acceptedAnswer": {
           "@type": "Answer",
           "text": "You must check with each manufacturer (Party Tyme or Karaoke Version) for public performance rights. Some tracks may require additional licensing for commercial use. YouTube tracks linked through our site are for reference only and should not be used for public performances."
@@ -93,10 +81,10 @@ export default function StructuredData() {
       },
       {
         "@type": "Question",
-        "name": "How many karaoke songs are available on KaraTrack+?",
+        "name": "How many karaoke songs are available on the Karatrack Search Engine?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "KaraTrack+ offers access to over 58,000 professional karaoke tracks from Party Tyme and Karaoke Version, plus a legacy database of classic and rare tracks. Our database is updated daily with new releases."
+          "text": "The Karatrack Search Engine offers access to over 100,000 professional karaoke tracks from Party Tyme and Karaoke Version, plus a legacy database of classic and rare tracks. The database is updated daily with new releases."
         }
       },
       {
@@ -117,14 +105,14 @@ export default function StructuredData() {
       {
         "@type": "ListItem",
         "position": 1,
-        "name": "Home",
+        "name": "Karatrack",
         "item": "https://karatrack.com"
       },
       {
         "@type": "ListItem",
         "position": 2,
-        "name": "Search",
-        "item": "https://karatrack.com/#search"
+        "name": "Search Engine",
+        "item": BASE
       }
     ]
   }
