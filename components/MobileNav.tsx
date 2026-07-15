@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Menu, X, HelpCircle, FileText } from 'lucide-react'
 import { useT, MAIN_SITE_LINKS, LoginPill } from '@/lib/i18n'
 import { MAIN_SITE_LIVE } from '@/lib/site-config'
@@ -25,8 +26,10 @@ export default function MobileNav() {
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
-      {/* Mobile Menu Overlay */}
-      {isOpen && (
+      {/* Mobile Menu Overlay — portaled to <body> so the header's
+          backdrop-blur can't trap this fixed-position panel (same bug the
+          Help/TOS modals had). */}
+      {isOpen && typeof document !== 'undefined' && createPortal(
         <div
           className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
           onClick={closeMenu}
@@ -111,7 +114,8 @@ export default function MobileNav() {
               </p>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Shared modals (same components the desktop header uses) */}

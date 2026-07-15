@@ -2,6 +2,7 @@
 
 import { X, HelpCircle, FileText } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useT } from '@/lib/i18n'
 
 /* ============================================================================
@@ -23,11 +24,22 @@ function ModalShell({
   children: ReactNode
 }) {
   if (!open) return null
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+  if (typeof document === 'undefined') return null
+
+  // Rendered through a portal directly under <body>. The sticky header has
+  // backdrop-blur, and a CSS rule makes any backdrop-filtered ancestor the
+  // positioning anchor for fixed children — which pinned this modal inside
+  // the header bar and pushed it off the top of the screen. The portal takes
+  // it out of the header entirely so it always centers in the viewport.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
         className="relative max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-3xl shadow-2xl"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        onClick={(e) => e.stopPropagation()}
       >
         <div
           className="sticky top-0 flex items-center justify-between p-6"
@@ -49,7 +61,8 @@ function ModalShell({
           <div className="space-y-4" style={{ color: 'var(--text-dim)' }}>{children}</div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
