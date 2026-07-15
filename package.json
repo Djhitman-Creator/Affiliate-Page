@@ -32,6 +32,7 @@
     "@types/node": "^24.7.1",
     "@types/papaparse": "^5.3.16",
     "@types/react": "19.2.0",
+    "@types/react-dom": "^19.2.0",
     "autoprefixer": "10.4.20",
     "cross-env": "^7.0.3",
     "dotenv": "^17.2.3",
