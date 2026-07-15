@@ -21,6 +21,7 @@ import React, {
   useState,
   type ReactNode,
 } from 'react';
+import { MAIN_SITE_LIVE } from '@/lib/site-config';
 
 export const LOCALES = [
   'en', 'es', 'fr', 'de', 'pt', 'ar', 'hi', 'ja', 'ko', 'vi', 'tl', 'zh-CN', 'zh-TW',
@@ -728,6 +729,8 @@ export const MAIN_SITE_LINKS = [
 
 export function NavLinks() {
   const { t } = useT();
+  // Hidden until the main site launches (see lib/site-config.ts).
+  if (!MAIN_SITE_LIVE) return null;
   return (
     <>
       {MAIN_SITE_LINKS.map((link) => (
@@ -742,6 +745,8 @@ export function NavLinks() {
 /* Cyan Login pill, identical to the main site's, linking to its login page */
 export function LoginPill() {
   const { t } = useT();
+  // Hidden until the main site launches (see lib/site-config.ts).
+  if (!MAIN_SITE_LIVE) return null;
   return (
     <a
       href="https://karatrack.com/login"

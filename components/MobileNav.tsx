@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Menu, X, HelpCircle, FileText } from 'lucide-react'
 import { useT, MAIN_SITE_LINKS, LoginPill } from '@/lib/i18n'
+import { MAIN_SITE_LIVE } from '@/lib/site-config'
 import { HelpModal, TosModal } from '@/components/HeaderModals'
 
 export default function MobileNav() {
@@ -49,20 +50,24 @@ export default function MobileNav() {
               </button>
             </div>
 
-            {/* Menu Items — same five links as the main site header */}
+            {/* Menu Items — main-site links appear only after launch */}
             <nav className="space-y-1 p-4">
-              {MAIN_SITE_LINKS.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={closeMenu}
-                  className="block rounded-xl p-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-cyan-500 dark:text-slate-300 dark:hover:bg-slate-900"
-                >
-                  {t(link.key)}
-                </a>
-              ))}
+              {MAIN_SITE_LIVE && (
+                <>
+                  {MAIN_SITE_LINKS.map((link) => (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMenu}
+                      className="block rounded-xl p-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-cyan-500 dark:text-slate-300 dark:hover:bg-slate-900"
+                    >
+                      {t(link.key)}
+                    </a>
+                  ))}
 
-              <div className="my-3 border-t border-slate-200 dark:border-slate-800"></div>
+                  <div className="my-3 border-t border-slate-200 dark:border-slate-800"></div>
+                </>
+              )}
 
               {/* Help */}
               <button
@@ -88,11 +93,15 @@ export default function MobileNav() {
                 {t('tos')}
               </button>
 
-              <div className="my-3 border-t border-slate-200 dark:border-slate-800"></div>
+              {MAIN_SITE_LIVE && (
+                <>
+                  <div className="my-3 border-t border-slate-200 dark:border-slate-800"></div>
 
-              <div className="p-3">
-                <LoginPill />
-              </div>
+                  <div className="p-3">
+                    <LoginPill />
+                  </div>
+                </>
+              )}
             </nav>
 
             {/* Footer */}

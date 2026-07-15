@@ -6,6 +6,7 @@ import StructuredData from '@/components/StructuredData'
 import MobileNav from "@/components/MobileNav"
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { LocaleProvider, LanguageSwitcher, NavLinks, LoginPill } from '@/lib/i18n'
+import { MAIN_SITE_LIVE } from '@/lib/site-config'
 
 export const metadata = {
   title: 'Karatrack Search Engine | Search 100,000+ Karaoke Songs | Party Tyme & Karaoke Version',
@@ -105,11 +106,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <footer className="border-t border-slate-200 px-6 py-10 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
               <div className="mx-auto flex max-w-7xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <p>© {new Date().getFullYear()} Rush Monkey LLC</p>
-                <div className="flex gap-4">
-                  <a href="https://karatrack.com/contact" className="hover:text-cyan-500">Contact</a>
-                  <a href="https://karatrack.com/support" className="hover:text-cyan-500">Support</a>
-                  <a href="https://karatrack.com" className="hover:text-cyan-500">Karatrack.com</a>
-                </div>
+                {MAIN_SITE_LIVE && (
+                  <div className="flex gap-4">
+                    <a href="https://karatrack.com/contact" className="hover:text-cyan-500">Contact</a>
+                    <a href="https://karatrack.com/support" className="hover:text-cyan-500">Support</a>
+                    <a href="https://karatrack.com" className="hover:text-cyan-500">Karatrack.com</a>
+                  </div>
+                )}
               </div>
               <p className="mx-auto mt-6 max-w-7xl text-xs leading-relaxed text-slate-400 dark:text-slate-500">
                 Karatrack is an independent karaoke track search and software company.
