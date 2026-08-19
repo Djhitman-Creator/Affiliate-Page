@@ -22,6 +22,12 @@ import React, {
   type ReactNode,
 } from 'react';
 import { MAIN_SITE_LIVE, MAIN_SITE_URL } from '@/lib/site-config';
+import {
+  LANG_COOKIE,
+  readPrefCookie,
+  writeSharedPrefCookie,
+  expireHostCookie,
+} from '@/lib/cross-site-prefs';
 
 export const LOCALES = [
   'en', 'es', 'fr', 'de', 'pt', 'ar', 'hi', 'ja', 'ko', 'vi', 'tl', 'zh-CN', 'zh-TW',
@@ -44,7 +50,9 @@ const LOCALE_LABELS: Record<Locale, string> = {
   'zh-TW': '繁體中文',
 };
 
-const COOKIE = 'KT_LOCALE';
+// Legacy host-only cookie from before preferences were shared with the
+// main site. Still read as a fallback so old visitors keep their choice.
+const LEGACY_COOKIE = 'KT_LOCALE';
 
 // Map a raw browser language ("pt-BR", "zh-HK", "de") to a supported locale.
 function detectLocale(): Locale {
@@ -62,9 +70,8 @@ function detectLocale(): Locale {
 }
 
 function readCookie(): Locale | null {
-  if (typeof document === 'undefined') return null;
-  const m = document.cookie.match(new RegExp(`(?:^|; )${COOKIE}=([^;]+)`));
-  const v = m ? decodeURIComponent(m[1]) : '';
+  // Shared cross-site choice first (set by either site), legacy cookie second.
+  const v = readPrefCookie(LANG_COOKIE) ?? readPrefCookie(LEGACY_COOKIE) ?? '';
   return (LOCALES as readonly string[]).includes(v) ? (v as Locale) : null;
 }
 
@@ -694,7 +701,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   }, [locale]);
 
   function setLocale(l: Locale) {
-    document.cookie = `${COOKIE}=${encodeURIComponent(l)}; path=/; max-age=31536000; SameSite=Lax`;
+    // Shared with www.karatrack.com — the main site reads KT_LANG and follows.
+    writeSharedPrefCookie(LANG_COOKIE, l);
+    // Clear the old host-only cookie so it can't shadow the shared one.
+    expireHostCookie(LEGACY_COOKIE);
     setLocaleState(l);
   }
 
