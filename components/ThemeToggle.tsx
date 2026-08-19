@@ -19,14 +19,39 @@ export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  // On first load, adopt the theme chosen on any *.karatrack.com site.
-  // Runs once; afterwards the local choice is the live one.
+  // Adopt the theme chosen on any *.karatrack.com site.
+  // - On load: follow the shared cookie; if none exists yet (visitor chose a
+  //   theme BEFORE cross-site sync shipped), seed the cookie from this
+  //   site's saved choice so existing preferences start syncing too.
+  // - On tab focus/visibility: re-check, so a tab that was already open
+  //   catches a change made on the other site without needing a refresh.
   useEffect(() => {
-    const shared = readPrefCookie(THEME_COOKIE);
-    if (shared && (THEMES as readonly string[]).includes(shared)) {
-      setTheme(shared);
-    }
+    const apply = () => {
+      const shared = readPrefCookie(THEME_COOKIE);
+      if (shared && (THEMES as readonly string[]).includes(shared)) {
+        setTheme(shared);
+      } else if (!shared) {
+        try {
+          const current = localStorage.getItem("theme");
+          if (current && (THEMES as readonly string[]).includes(current)) {
+            writeSharedPrefCookie(THEME_COOKIE, current);
+          }
+        } catch {
+          // localStorage unavailable (private mode etc.) - nothing to seed.
+        }
+      }
+    };
+    apply();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") apply();
+    };
+    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", onVisible);
     setMounted(true);
+    return () => {
+      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
