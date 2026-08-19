@@ -1,17 +1,21 @@
 import './globals.css'
 import type { ReactNode } from 'react'
 import Providers from './providers'
-import HeaderModals from "@/components/HeaderModals"
 import StructuredData from '@/components/StructuredData'
 import MobileNav from "@/components/MobileNav"
+import SiteFooterContent from '@/components/SiteFooterContent'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { LocaleProvider, LanguageSwitcher, NavLinks, LoginPill } from '@/lib/i18n'
-import { MAIN_SITE_LIVE } from '@/lib/site-config'
+import { MAIN_SITE_URL } from '@/lib/site-config'
+
+// Canonical host for the search engine after the Aug 2026 domain swap.
+const BASE_URL = 'https://search.karatrack.com'
 
 export const metadata = {
-  title: 'Karatrack Search Engine | Search 100,000+ Karaoke Songs | Party Tyme & Karaoke Version',
-  description: 'Search professional karaoke tracks instantly. Over 100,000 songs from Party Tyme Karaoke and Karaoke Version. MP3, MP4, KFN formats. Updated daily with new releases.',
-  keywords: 'karaoke downloads, karaoke tracks, karaoke songs, party tyme karaoke, karaoke version, backing tracks, karaoke mp3, download karaoke, professional karaoke, karaoke with lyrics, karaoke search engine',
+  metadataBase: new URL(BASE_URL),
+  title: 'Professional Karaoke Downloads | Search 100,000+ Songs | Karatrack',
+  description: 'Search professional karaoke downloads instantly. Over 100,000 karaoke songs from Party Tyme and Karaoke Version in MP3, MP4, and KFN formats — updated daily with new releases.',
+  keywords: 'karaoke downloads, professional karaoke downloads, karaoke tracks, karaoke songs, party tyme karaoke, karaoke version, backing tracks, karaoke mp3, download karaoke, professional karaoke, karaoke with lyrics, karaoke search engine',
   authors: [{ name: 'Rush Monkey LLC' }],
   creator: 'Karatrack',
   publisher: 'Rush Monkey LLC',
@@ -32,17 +36,17 @@ export const metadata = {
   },
   manifest: '/site.webmanifest',
   openGraph: {
-    title: 'Karatrack Search Engine | Professional Karaoke Downloads',
-    description: 'Search over 100,000 karaoke tracks from Party Tyme & Karaoke Version. Download MP3, MP4, KFN formats instantly.',
-    url: 'https://songs.karatrack.com',
+    title: 'Professional Karaoke Downloads | Karatrack Search Engine',
+    description: 'Search over 100,000 professional karaoke downloads from Party Tyme & Karaoke Version. MP3, MP4, and KFN formats, updated daily.',
+    url: BASE_URL,
     siteName: 'Karatrack Search Engine',
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Karatrack Search Engine | 100,000+ Karaoke Downloads',
-    description: 'Search professional karaoke tracks from Party Tyme & Karaoke Version. Instant downloads in multiple formats.',
+    title: 'Professional Karaoke Downloads | 100,000+ Songs | Karatrack',
+    description: 'Search professional karaoke downloads from Party Tyme & Karaoke Version. Instant results in multiple formats.',
   },
   robots: {
     index: true,
@@ -55,7 +59,7 @@ export const metadata = {
     },
   },
   alternates: {
-    canonical: 'https://songs.karatrack.com',
+    canonical: BASE_URL,
   },
 }
 
@@ -65,10 +69,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <Providers>
           <LocaleProvider>
-            {/* Sticky header — mirrors the main karatrack.com SiteHeader */}
+            {/* Sticky header — mirrors the main karatrack.com SiteHeader.
+                Help + TOS moved to the footer (Aug 2026) to match the main
+                site's clean header. */}
             <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
               <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-4">
-                <a href="https://karatrack.com" className="flex items-baseline gap-2 text-xl font-black tracking-tight">
+                <a href={MAIN_SITE_URL} className="flex items-baseline gap-2 text-xl font-black tracking-tight">
                   <span>
                     Kara<span className="text-cyan-500">track</span>
                   </span>
@@ -83,9 +89,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 </nav>
 
                 <div className="flex items-center gap-3">
-                  <div className="hidden items-center gap-3 md:flex">
-                    <HeaderModals />
-                  </div>
                   <LanguageSwitcher />
                   <ThemeToggle />
                   <span className="hidden sm:inline-flex">
@@ -102,24 +105,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               {children}
             </main>
 
-            {/* Footer — mirrors the main karatrack.com SiteFooter */}
+            {/* Footer — mirrors the main karatrack.com SiteFooter, plus the
+                Help/TOS modals and the required non-affiliation disclaimer. */}
             <footer className="border-t border-slate-200 px-6 py-10 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-              <div className="mx-auto flex max-w-7xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <p>© {new Date().getFullYear()} Rush Monkey LLC</p>
-                {MAIN_SITE_LIVE && (
-                  <div className="flex gap-4">
-                    <a href="https://karatrack.com/contact" className="hover:text-cyan-500">Contact</a>
-                    <a href="https://karatrack.com/support" className="hover:text-cyan-500">Support</a>
-                    <a href="https://karatrack.com" className="hover:text-cyan-500">Karatrack.com</a>
-                  </div>
-                )}
-              </div>
-              <p className="mx-auto mt-6 max-w-7xl text-xs leading-relaxed text-slate-400 dark:text-slate-500">
-                Karatrack is an independent karaoke track search and software company.
-                Party Tyme, Karaoke Version, and other brand names are trademarks of their
-                respective owners. Karatrack is not affiliated with, sponsored by, or
-                endorsed by those companies.
-              </p>
+              <SiteFooterContent />
             </footer>
             <StructuredData />
           </LocaleProvider>

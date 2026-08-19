@@ -1,5 +1,5 @@
 export default function StructuredData() {
-  const BASE = 'https://songs.karatrack.com'
+  const BASE = 'https://search.karatrack.com'
 
   const websiteSchema = {
     "@context": "https://schema.org",
@@ -22,10 +22,12 @@ export default function StructuredData() {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "Rush Monkey LLC",
-    "url": "https://karatrack.com",
+    "url": "https://www.karatrack.com",
     "logo": `${BASE}/karatrack-logo.png`,
     "sameAs": [
-      "https://www.facebook.com/karatrackplus"
+      "https://www.facebook.com/karatrack",
+      "https://www.facebook.com/karameetapp",
+      "https://www.instagram.com/karatrack_software"
     ],
     "contactPoint": {
       "@type": "ContactPoint",
@@ -106,7 +108,7 @@ export default function StructuredData() {
         "@type": "ListItem",
         "position": 1,
         "name": "Karatrack",
-        "item": "https://karatrack.com"
+        "item": "https://www.karatrack.com"
       },
       {
         "@type": "ListItem",

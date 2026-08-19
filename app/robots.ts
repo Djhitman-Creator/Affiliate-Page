@@ -24,7 +24,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: '/api/',
       },
     ],
-    sitemap: 'https://songs.karatrack.com/sitemap.xml',
-    host: 'https://songs.karatrack.com',
+    sitemap: 'https://search.karatrack.com/sitemap.xml',
+    host: 'https://search.karatrack.com',
   }
 }

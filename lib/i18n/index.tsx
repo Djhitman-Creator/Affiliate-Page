@@ -21,7 +21,7 @@ import React, {
   useState,
   type ReactNode,
 } from 'react';
-import { MAIN_SITE_LIVE } from '@/lib/site-config';
+import { MAIN_SITE_LIVE, MAIN_SITE_URL } from '@/lib/site-config';
 
 export const LOCALES = [
   'en', 'es', 'fr', 'de', 'pt', 'ar', 'hi', 'ja', 'ko', 'vi', 'tl', 'zh-CN', 'zh-TW',
@@ -80,6 +80,8 @@ const MESSAGES: Record<Locale, Dict> = {
     tagline: 'Karaoke Song Search',
     products: 'Products', pricing: 'Pricing', roadmap: 'Roadmap', updates: 'Updates', support: 'Support', login: 'Login',
     menu: 'Menu',
+    contact: 'Contact',
+    joinCommunity: 'Join our community on Facebook',
     help: 'Help',
     helpSub: 'How to search',
     tos: 'Terms of Service',
@@ -123,6 +125,8 @@ const MESSAGES: Record<Locale, Dict> = {
     tagline: 'Buscador de canciones de karaoke',
     products: 'Productos', pricing: 'Precios', roadmap: 'Hoja de ruta', updates: 'Novedades', support: 'Soporte', login: 'Iniciar sesión',
     menu: 'Menú',
+    contact: 'Contacto',
+    joinCommunity: 'Únete a nuestra comunidad en Facebook',
     help: 'Ayuda',
     helpSub: 'Cómo buscar',
     tos: 'Términos de servicio',
@@ -166,6 +170,8 @@ const MESSAGES: Record<Locale, Dict> = {
     tagline: 'Recherche de chansons karaoké',
     products: 'Produits', pricing: 'Tarifs', roadmap: 'Feuille de route', updates: 'Mises à jour', support: 'Assistance', login: 'Connexion',
     menu: 'Menu',
+    contact: 'Contact',
+    joinCommunity: 'Rejoignez notre communauté sur Facebook',
     help: 'Aide',
     helpSub: 'Comment chercher',
     tos: "Conditions d'utilisation",
@@ -209,6 +215,8 @@ const MESSAGES: Record<Locale, Dict> = {
     tagline: 'Karaoke-Song-Suche',
     products: 'Produkte', pricing: 'Preise', roadmap: 'Roadmap', updates: 'Updates', support: 'Support', login: 'Anmelden',
     menu: 'Menü',
+    contact: 'Kontakt',
+    joinCommunity: 'Werde Teil unserer Community auf Facebook',
     help: 'Hilfe',
     helpSub: 'So funktioniert die Suche',
     tos: 'Nutzungsbedingungen',
@@ -252,6 +260,8 @@ const MESSAGES: Record<Locale, Dict> = {
     tagline: 'Busca de músicas de karaokê',
     products: 'Produtos', pricing: 'Preços', roadmap: 'Roteiro', updates: 'Atualizações', support: 'Suporte', login: 'Entrar',
     menu: 'Menu',
+    contact: 'Contato',
+    joinCommunity: 'Junte-se à nossa comunidade no Facebook',
     help: 'Ajuda',
     helpSub: 'Como pesquisar',
     tos: 'Termos de Serviço',
@@ -295,6 +305,8 @@ const MESSAGES: Record<Locale, Dict> = {
     tagline: 'بحث أغاني الكاريوكي',
     products: 'المنتجات', pricing: 'الأسعار', roadmap: 'خارطة الطريق', updates: 'التحديثات', support: 'الدعم', login: 'تسجيل الدخول',
     menu: 'القائمة',
+    contact: 'اتصل بنا',
+    joinCommunity: 'انضم إلى مجتمعنا على فيسبوك',
     help: 'مساعدة',
     helpSub: 'كيفية البحث',
     tos: 'شروط الخدمة',
@@ -338,6 +350,8 @@ const MESSAGES: Record<Locale, Dict> = {
     tagline: 'कराओके गीत खोज',
     products: 'उत्पाद', pricing: 'मूल्य', roadmap: 'रोडमैप', updates: 'अपडेट', support: 'सहायता', login: 'लॉगिन',
     menu: 'मेनू',
+    contact: 'संपर्क करें',
+    joinCommunity: 'फ़ेसबुक पर हमारी कम्युनिटी से जुड़ें',
     help: 'सहायता',
     helpSub: 'खोज कैसे करें',
     tos: 'सेवा की शर्तें',
@@ -381,6 +395,8 @@ const MESSAGES: Record<Locale, Dict> = {
     tagline: 'カラオケ楽曲検索',
     products: '製品', pricing: '料金', roadmap: 'ロードマップ', updates: '更新情報', support: 'サポート', login: 'ログイン',
     menu: 'メニュー',
+    contact: 'お問い合わせ',
+    joinCommunity: 'Facebookコミュニティに参加',
     help: 'ヘルプ',
     helpSub: '検索のコツ',
     tos: '利用規約',
@@ -424,6 +440,8 @@ const MESSAGES: Record<Locale, Dict> = {
     tagline: '노래방 곡 검색',
     products: '제품', pricing: '가격', roadmap: '로드맵', updates: '업데이트', support: '지원', login: '로그인',
     menu: '메뉴',
+    contact: '문의하기',
+    joinCommunity: 'Facebook 커뮤니티에 참여하세요',
     help: '도움말',
     helpSub: '검색 방법',
     tos: '서비스 약관',
@@ -467,6 +485,8 @@ const MESSAGES: Record<Locale, Dict> = {
     tagline: 'Tìm kiếm bài hát karaoke',
     products: 'Sản phẩm', pricing: 'Giá', roadmap: 'Lộ trình', updates: 'Cập nhật', support: 'Hỗ trợ', login: 'Đăng nhập',
     menu: 'Menu',
+    contact: 'Liên hệ',
+    joinCommunity: 'Tham gia cộng đồng của chúng tôi trên Facebook',
     help: 'Trợ giúp',
     helpSub: 'Cách tìm kiếm',
     tos: 'Điều khoản dịch vụ',
@@ -510,6 +530,8 @@ const MESSAGES: Record<Locale, Dict> = {
     tagline: 'Paghahanap ng kantang karaoke',
     products: 'Mga Produkto', pricing: 'Presyo', roadmap: 'Roadmap', updates: 'Mga Update', support: 'Suporta', login: 'Mag-login',
     menu: 'Menu',
+    contact: 'Makipag-ugnayan',
+    joinCommunity: 'Sumali sa aming komunidad sa Facebook',
     help: 'Tulong',
     helpSub: 'Paano maghanap',
     tos: 'Mga Tuntunin ng Serbisyo',
@@ -553,6 +575,8 @@ const MESSAGES: Record<Locale, Dict> = {
     tagline: '卡拉OK歌曲搜索',
     products: '产品', pricing: '价格', roadmap: '路线图', updates: '更新', support: '支持', login: '登录',
     menu: '菜单',
+    contact: '联系我们',
+    joinCommunity: '加入我们的 Facebook 社区',
     help: '帮助',
     helpSub: '搜索技巧',
     tos: '服务条款',
@@ -596,6 +620,8 @@ const MESSAGES: Record<Locale, Dict> = {
     tagline: '卡拉OK歌曲搜尋',
     products: '產品', pricing: '價格', roadmap: '路線圖', updates: '更新', support: '支援', login: '登入',
     menu: '選單',
+    contact: '聯絡我們',
+    joinCommunity: '加入我們的 Facebook 社群',
     help: '說明',
     helpSub: '搜尋技巧',
     tos: '服務條款',
@@ -720,11 +746,11 @@ export function LanguageSwitcher() {
    header, pointing back to the main site, with translated labels.
 --------------------------------------------------------------------------- */
 export const MAIN_SITE_LINKS = [
-  { href: 'https://karatrack.com/products', key: 'products' },
-  { href: 'https://karatrack.com/pricing', key: 'pricing' },
-  { href: 'https://karatrack.com/roadmap', key: 'roadmap' },
-  { href: 'https://karatrack.com/updates', key: 'updates' },
-  { href: 'https://karatrack.com/support', key: 'support' },
+  { href: `${MAIN_SITE_URL}/products`, key: 'products' },
+  { href: `${MAIN_SITE_URL}/pricing`, key: 'pricing' },
+  { href: `${MAIN_SITE_URL}/roadmap`, key: 'roadmap' },
+  { href: `${MAIN_SITE_URL}/updates`, key: 'updates' },
+  { href: `${MAIN_SITE_URL}/support`, key: 'support' },
 ] as const;
 
 export function NavLinks() {
@@ -749,7 +775,7 @@ export function LoginPill() {
   if (!MAIN_SITE_LIVE) return null;
   return (
     <a
-      href="https://karatrack.com/login"
+      href={`${MAIN_SITE_URL}/login`}
       className="rounded-full bg-cyan-500 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-cyan-400"
     >
       {t('login')}
